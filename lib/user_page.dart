@@ -1,9 +1,16 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(JobOpeningApp());
 }
 
@@ -30,7 +37,9 @@ class JobOpeningsPage extends StatefulWidget {
 
 class _JobOpeningsPageState extends State<JobOpeningsPage> {
   final TextEditingController _searchController = TextEditingController();
-  Map<String, String?> _resumeFileNames = {};
+  Map<String, PlatformFile?> _resumeFiles = {};
+  bool _isLoading = false;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Sample job openings data
   final List<Map<String, dynamic>> _jobOpenings = [
@@ -42,8 +51,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       'salary': '\$80,000 - \$100,000',
       'experienceLevel': 'Mid-Level',
       'employmentType': 'Full-time',
-      'description': 'We are seeking a skilled Flutter Developer to join our team. You will be responsible for developing and maintaining mobile applications using Flutter. The ideal candidate has experience with Dart and Firebase, and is comfortable working in an Agile environment.',
-      'skills': ['Flutter', 'Dart', 'Firebase', 'Git', 'REST API']
+      'description':
+          'We are seeking a skilled Flutter Developer to join our team. You will be responsible for developing and maintaining mobile applications using Flutter. The ideal candidate has experience with Dart and Firebase, and is comfortable working in an Agile environment.',
+      'skills': ['Flutter', 'Dart', 'Firebase', 'Git', 'REST API'],
     },
     {
       'id': '2',
@@ -53,8 +63,15 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       'salary': '\$100,000 - \$120,000',
       'experienceLevel': 'Senior',
       'employmentType': 'Contract',
-      'description': 'AI Innovations is looking for a Machine Learning Engineer to design and implement machine learning models. You will work closely with data scientists and software engineers to integrate ML solutions into our products. Experience with TensorFlow and Python is required.',
-      'skills': ['Python', 'TensorFlow', 'Machine Learning', 'Data Science', 'PyTorch']
+      'description':
+          'AI Innovations is looking for a Machine Learning Engineer to design and implement machine learning models. You will work closely with data scientists and software engineers to integrate ML solutions into our products. Experience with TensorFlow and Python is required.',
+      'skills': [
+        'Python',
+        'TensorFlow',
+        'Machine Learning',
+        'Data Science',
+        'PyTorch',
+      ],
     },
     {
       'id': '3',
@@ -64,8 +81,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       'salary': '\$90,000 - \$110,000',
       'experienceLevel': 'Senior',
       'employmentType': 'Freelance',
-      'description': 'WebWorks is hiring a Full Stack Developer to build and maintain web applications. You will be responsible for both frontend and backend development. We are looking for someone with experience in JavaScript, React, and Node.js.',
-      'skills': ['JavaScript', 'React', 'Node.js', 'MongoDB', 'Express.js']
+      'description':
+          'WebWorks is hiring a Full Stack Developer to build and maintain web applications. You will be responsible for both frontend and backend development. We are looking for someone with experience in JavaScript, React, and Node.js.',
+      'skills': ['JavaScript', 'React', 'Node.js', 'MongoDB', 'Express.js'],
     },
     {
       'id': '4',
@@ -75,8 +93,15 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       'salary': '\$75,000 - \$95,000',
       'experienceLevel': 'Mid-Level',
       'employmentType': 'Full-time',
-      'description': 'Creative Designs is seeking a talented UI/UX Designer to create beautiful and functional user interfaces. You will work closely with product managers and developers to implement your designs. Experience with Figma and Adobe XD is required.',
-      'skills': ['UI/UX Design', 'Figma', 'Adobe XD', 'Prototyping', 'User Research']
+      'description':
+          'Creative Designs is seeking a talented UI/UX Designer to create beautiful and functional user interfaces. You will work closely with product managers and developers to implement your designs. Experience with Figma and Adobe XD is required.',
+      'skills': [
+        'UI/UX Design',
+        'Figma',
+        'Adobe XD',
+        'Prototyping',
+        'User Research',
+      ],
     },
     {
       'id': '5',
@@ -86,21 +111,20 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       'salary': '\$110,000 - \$130,000',
       'experienceLevel': 'Senior',
       'employmentType': 'Full-time',
-      'description': 'Cloud Solutions is looking for a DevOps Engineer to improve our infrastructure and deployment processes. You will be responsible for implementing CI/CD pipelines and managing cloud resources. Experience with AWS, Docker, and Kubernetes is required.',
-      'skills': ['DevOps', 'AWS', 'Docker', 'Kubernetes', 'CI/CD']
+      'description':
+          'Cloud Solutions is looking for a DevOps Engineer to improve our infrastructure and deployment processes. You will be responsible for implementing CI/CD pipelines and managing cloud resources. Experience with AWS, Docker, and Kubernetes is required.',
+      'skills': ['DevOps', 'AWS', 'Docker', 'Kubernetes', 'CI/CD'],
     },
   ];
 
-  // Filtered job openings based on search query - FIXED FUNCTION TYPE ERRORS
   List<Map<String, dynamic>> get _filteredJobOpenings {
     if (_searchController.text.isEmpty) {
       return _jobOpenings;
     }
 
     final searchQuery = _searchController.text.toLowerCase();
-    
+
     return _jobOpenings.where((job) {
-      // Check if any skill contains the search query
       bool hasMatchingSkill = false;
       for (String skill in job['skills']) {
         if (skill.toLowerCase().contains(searchQuery)) {
@@ -108,11 +132,8 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
           break;
         }
       }
-      
-      // Check if job title contains the search query
+
       bool hasMatchingTitle = job['title'].toLowerCase().contains(searchQuery);
-      
-      // Return true if either condition is met
       return hasMatchingSkill || hasMatchingTitle;
     }).toList();
   }
@@ -126,7 +147,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
 
       if (result != null) {
         setState(() {
-          _resumeFileNames[jobId] = result.files.single.name;
+          _resumeFiles[jobId] = result.files.first;
         });
       }
     } on PlatformException catch (e) {
@@ -134,8 +155,8 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
     }
   }
 
-  void _submitResume(String jobId) {
-    if (_resumeFileNames[jobId] == null) {
+  Future<void> _submitResume(String jobId) async {
+    if (_resumeFiles[jobId] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please upload a resume first'),
@@ -145,16 +166,84 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       return;
     }
 
-    // Find job by ID
-    final job = _jobOpenings.firstWhere((job) => job['id'] == jobId);
-    
-    // Implement resume submission logic here
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Resume submitted successfully for ${job['title']} position'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final job = _jobOpenings.firstWhere((job) => job['id'] == jobId);
+      final resumeFile = _resumeFiles[jobId]!;
+
+      // Create multipart request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://resume25.pythonanywhere.com/analyze'),
+      );
+
+      // Add file to the request
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          resumeFile.bytes!,
+          filename: resumeFile.name,
+        ),
+      );
+
+      // Send the request
+      var response = await request.send();
+
+      // Get the response
+      var responseData = await response.stream.bytesToString();
+      var jsonResponse = jsonDecode(responseData);
+
+      // Print the response to console
+      print('Resume Analysis Result:');
+      print(jsonResponse);
+
+      // Store the response in Firestore
+      await _storeAnalysisResult(jobId, job['title'], jsonResponse);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Resume submitted and analyzed successfully for ${job['title']} position',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error submitting resume: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit resume: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _storeAnalysisResult(
+    String jobId,
+    String jobTitle,
+    Map<String, dynamic> analysisResult,
+  ) async {
+    try {
+      await _firestore.collection('resume_analysis_results').add({
+        'jobId': jobId,
+        'jobTitle': jobTitle,
+        'analysisResult': analysisResult,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      print('Analysis result stored in Firestore');
+    } catch (e) {
+      print('Error storing analysis result: $e');
+      throw e;
+    }
   }
 
   @override
@@ -171,84 +260,93 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
         backgroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome message
-            Text(
-              'Welcome to Job Openings!',
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Find your dream job and apply today',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            SizedBox(height: 24),
-
-            // Search bar
-            TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Search by job title or skills...',
-                hintStyle: TextStyle(color: Colors.white70),
-                filled: true,
-                fillColor: Colors.grey[850],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Welcome message
+                Text(
+                  'Welcome to Job Openings!',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-                prefixIcon: Icon(Icons.search, color: Colors.white70),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              style: GoogleFonts.poppins(color: Colors.white),
-            ),
-            SizedBox(height: 24),
+                SizedBox(height: 8),
+                Text(
+                  'Find your dream job and apply today',
+                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
+                ),
+                SizedBox(height: 24),
 
-            // Job listings header
-            Text(
-              'Available Positions (${_filteredJobOpenings.length})',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(height: 16),
+                // Search bar
+                TextField(
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Search by job title or skills...',
+                    hintStyle: TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.grey[850],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.search, color: Colors.white70),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  style: GoogleFonts.poppins(color: Colors.white),
+                ),
+                SizedBox(height: 24),
 
-            // Job openings list
-            Expanded(
-              child: ListView.builder(
-                itemCount: _filteredJobOpenings.length,
-                itemBuilder: (context, index) {
-                  final job = _filteredJobOpenings[index];
-                  return AnimatedOpacity(
-                    opacity: 1.0,
-                    duration: Duration(milliseconds: 300),
-                    child: _buildJobTile(job),
-                  );
-                },
-              ),
+                // Job listings header
+                Text(
+                  'Available Positions (${_filteredJobOpenings.length})',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                // Job openings list
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _filteredJobOpenings.length,
+                    itemBuilder: (context, index) {
+                      final job = _filteredJobOpenings[index];
+                      return AnimatedOpacity(
+                        opacity: 1.0,
+                        duration: Duration(milliseconds: 300),
+                        child: _buildJobTile(job),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildJobTile(Map<String, dynamic> job) {
     String jobId = job['id'];
-    
+
     return Card(
       color: Colors.grey[850],
       elevation: 4,
@@ -300,21 +398,20 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: (job['skills'] as List<dynamic>).map((skill) {
-                    return Chip(
-                      label: Text(
-                        skill.toString(),
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                        ),
-                      ),
-                      backgroundColor: Colors.blue.shade800,
-                    );
-                  }).toList(),
+                  children:
+                      (job['skills'] as List<dynamic>).map((skill) {
+                        return Chip(
+                          label: Text(
+                            skill.toString(),
+                            style: GoogleFonts.poppins(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.blue.shade800,
+                        );
+                      }).toList(),
                 ),
                 SizedBox(height: 16),
-                
-                // Resume upload section - Inside each job tile
+
+                // Resume upload section
                 Divider(color: Colors.grey[700]),
                 SizedBox(height: 16),
                 Text(
@@ -338,7 +435,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                     SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        _resumeFileNames[jobId] ?? 'No file selected',
+                        _resumeFiles[jobId]?.name ?? 'No file selected',
                         style: TextStyle(color: Colors.white70),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -352,7 +449,10 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -388,12 +488,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-              ),
-            ),
+            child: Text(value, style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
       ),

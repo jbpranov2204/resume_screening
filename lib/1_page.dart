@@ -1,47 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:resume_screening/2_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Add this import for date formatting
 
 class DashboardPage extends StatefulWidget {
   @override
   _DashboardPageState createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin {
+class _DashboardPageState extends State<DashboardPage>
+    with SingleTickerProviderStateMixin {
   final String _username = "John Doe";
   late AnimationController _animationController;
-  
-  // Sample job history data
-  final List<Map<String, dynamic>> _jobHistory = [
-    {
-      'title': 'Flutter Developer',
-      'company': 'Tech Solutions Inc.',
-      'date': '2023-05-15',
-      'applicants': 24,
-      'status': 'Active',
-    },
-    {
-      'title': 'Machine Learning Engineer',
-      'company': 'AI Innovations',
-      'date': '2023-04-10',
-      'applicants': 18,
-      'status': 'Closed',
-    },
-    {
-      'title': 'Full Stack Developer',
-      'company': 'WebWorks Ltd.',
-      'date': '2023-03-22',
-      'applicants': 32,
-      'status': 'Active',
-    },
-    {
-      'title': 'Mobile App Developer',
-      'company': 'AppGenius',
-      'date': '2023-02-05',
-      'applicants': 15,
-      'status': 'Closed',
-    },
-  ];
+
+  // Firestore instance
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Stream for jobs
+  Stream<QuerySnapshot>? _jobsStream;
 
   @override
   void initState() {
@@ -50,6 +27,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+
+    // Initialize jobs stream from Firestore with error handling
+    try {
+      _jobsStream = _firestore.collection('jobs').snapshots();
+    } catch (e) {
+      print('Error initializing Firestore stream: $e');
+    }
   }
 
   @override
@@ -75,7 +59,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundImage: NetworkImage('https://randomuser.me/api/portraits/men/1.jpg'),
+                  backgroundImage: NetworkImage(
+                    'https://randomuser.me/api/portraits/men/1.jpg',
+                  ),
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -88,17 +74,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 ),
                 Text(
                   'john.doe@example.com',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                 ),
                 SizedBox(height: 24),
                 _buildProfileMenuItem(Icons.person, 'Edit Profile'),
                 _buildProfileMenuItem(Icons.settings, 'Settings'),
                 _buildProfileMenuItem(Icons.help_outline, 'Help & Support'),
                 Divider(color: Colors.grey.shade800),
-                _buildProfileMenuItem(Icons.logout, 'Sign Out', isSignOut: true),
+                _buildProfileMenuItem(
+                  Icons.logout,
+                  'Sign Out',
+                  isSignOut: true,
+                ),
               ],
             ),
           ),
@@ -107,7 +94,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
-  Widget _buildProfileMenuItem(IconData icon, String title, {bool isSignOut = false}) {
+  Widget _buildProfileMenuItem(
+    IconData icon,
+    String title, {
+    bool isSignOut = false,
+  }) {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
@@ -170,7 +161,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               onTap: _showProfileMenu,
               child: CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://randomuser.me/api/portraits/men/1.jpg'),
+                backgroundImage: NetworkImage(
+                  'https://randomuser.me/api/portraits/men/1.jpg',
+                ),
               ),
             ),
           ),
@@ -184,10 +177,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             // Welcome message
             RichText(
               text: TextSpan(
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  color: Colors.white,
-                ),
+                style: GoogleFonts.poppins(fontSize: 24, color: Colors.white),
                 children: [
                   TextSpan(text: 'Welcome back, '),
                   TextSpan(
@@ -203,13 +193,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             SizedBox(height: 8),
             Text(
               'Manage your job listings and review applicants',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
             ),
             SizedBox(height: 32),
-            
+
             // Stats overview
             Row(
               children: [
@@ -220,9 +207,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 _buildStatCard('Pending Review', '12', Icons.pending_outlined),
               ],
             ),
-            
+
             SizedBox(height: 32),
-            
+
             // Job History section
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -241,26 +228,62 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   },
                   child: Text(
                     'View All',
-                    style: GoogleFonts.poppins(
-                      color: Colors.blue,
-                    ),
+                    style: GoogleFonts.poppins(color: Colors.blue),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            
-            // Job history list
-            ..._jobHistory.map((job) => _buildJobHistoryCard(job)),
-            
+
+            // Job history list with StreamBuilder
+            StreamBuilder<QuerySnapshot>(
+              stream: _jobsStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error loading jobs',
+                      style: GoogleFonts.poppins(color: Colors.red),
+                    ),
+                  );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No job listings found',
+                      style: GoogleFonts.poppins(color: Colors.grey),
+                    ),
+                  );
+                }
+
+                // Display job listings
+                return Column(
+                  children:
+                      snapshot.data!.docs.map((DocumentSnapshot document) {
+                        Map<String, dynamic> job =
+                            document.data() as Map<String, dynamic>;
+                        // Add the document ID to the job map
+                        job['id'] = document.id;
+                        return _buildJobHistoryCard(job);
+                      }).toList(),
+                );
+              },
+            ),
+
             SizedBox(height: 40),
-            
+
             // Add new job button
             Center(
               child: ElevatedButton(
                 onPressed: _navigateToJobUpload,
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white, backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.blue,
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -315,10 +338,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             SizedBox(height: 4),
             Text(
               title,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
@@ -327,8 +347,21 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Widget _buildJobHistoryCard(Map<String, dynamic> job) {
-    final bool isActive = job['status'] == 'Active';
-    
+    // Add null checks and default values for all fields
+    final String title = job['jobTitle'] ?? 'Untitled Job';
+    final String status = job['employmentType'] ?? 'Unknown';
+    final String company = job['company'] ?? 'No Company';
+    final int applicants = job['applicants'] ?? 0; // Default to 0 if null
+    final Timestamp? timestamp = job['postedAt'];
+    final String date =
+        timestamp != null
+            ? DateFormat('yyyy-MM-dd').format(
+              timestamp.toDate(),
+            ) // Format the date
+            : 'No date available';
+
+    final bool isActive = status == 'Active';
+
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -340,7 +373,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // Navigate to job details
+            // Navigate to job details with document ID
+            // You can use job['id'] to get the document ID
           },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
@@ -353,7 +387,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   children: [
                     Expanded(
                       child: Text(
-                        job['title'],
+                        title,
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -363,13 +397,19 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: isActive ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                        color:
+                            isActive
+                                ? Colors.green.withOpacity(0.2)
+                                : Colors.red.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        job['status'],
+                        status,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: isActive ? Colors.green : Colors.red,
@@ -381,11 +421,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 ),
                 SizedBox(height: 8),
                 Text(
-                  job['company'],
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  company,
+                  style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                 ),
                 SizedBox(height: 12),
                 Row(
@@ -393,10 +430,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                        Icon(
+                          Icons.person_outline,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
                         SizedBox(width: 4),
                         Text(
-                          '${job['applicants']} applicants',
+                          '$applicants applicants',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: Colors.grey,
@@ -405,7 +446,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       ],
                     ),
                     Text(
-                      'Posted: ${job['date']}',
+                      'Posted: $date', // Display formatted date
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.grey,
@@ -421,4 +462,3 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 }
-
