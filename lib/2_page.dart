@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class JobDescriptionPage extends StatefulWidget {
+  final String? jobId; // For editing existing jobs
+
+  const JobDescriptionPage({Key? key, this.jobId}) : super(key: key);
+
   @override
-  _JobDescriptionPage createState() => _JobDescriptionPage();
+  _JobDescriptionPageState createState() => _JobDescriptionPageState();
 }
 
-class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerProviderStateMixin {
+class _JobDescriptionPageState extends State<JobDescriptionPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
-  
+
+  // Firebase instances
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Document ID for the current job (if editing)
+  String? _jobDocumentId;
+
   // Form fields
   String _jobTitle = '';
   String _company = '';
@@ -19,149 +33,269 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
   String _salary = '';
   String _experienceLevel = 'Entry Level';
   String _employmentType = 'Full-time';
-  
-  // Selected skills
   List<String> _selectedSkills = [];
-  
-  // Job posted status
   bool _isJobPosted = false;
-  
-  // List of available skills (40+ skills)
+  bool _isLoading = false;
+
+  // Available options
   final List<String> _availableSkills = [
-    'Flutter', 'Dart', 'React', 'React Native', 'JavaScript', 'TypeScript',
-    'HTML/CSS', 'Node.js', 'Express.js', 'Python', 'Django', 'Flask',
-    'Java', 'Spring Boot', 'Kotlin', 'Swift', 'iOS Development', 'Android Development',
-    'C#', '.NET', 'PHP', 'Laravel', 'Ruby', 'Ruby on Rails',
-    'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Firebase', 'AWS',
-    'Docker', 'Kubernetes', 'CI/CD', 'Git', 'DevOps', 'Machine Learning',
-    'TensorFlow', 'PyTorch', 'Data Analysis', 'Data Science', 'Big Data',
-    'Hadoop', 'Spark', 'UI/UX Design', 'Figma', 'Adobe XD',
-    'Product Management', 'Agile', 'Scrum', 'Technical Writing'
+    'Flutter',
+    'Dart',
+    'React',
+    'React Native',
+    'JavaScript',
+    'TypeScript',
+    'HTML/CSS',
+    'Node.js',
+    'Express.js',
+    'Python',
+    'Django',
+    'Flask',
+    'Java',
+    'Spring Boot',
+    'Kotlin',
+    'Swift',
+    'iOS Development',
+    'Android Development',
+    'C#',
+    '.NET',
+    'PHP',
+    'Laravel',
+    'Ruby',
+    'Ruby on Rails',
+    'SQL',
+    'MySQL',
+    'PostgreSQL',
+    'MongoDB',
+    'Firebase',
+    'AWS',
+    'Docker',
+    'Kubernetes',
+    'CI/CD',
+    'Git',
+    'DevOps',
+    'Machine Learning',
+    'TensorFlow',
+    'PyTorch',
+    'Data Analysis',
+    'Data Science',
+    'Big Data',
+    'Hadoop',
+    'Spark',
+    'UI/UX Design',
+    'Figma',
+    'Adobe XD',
+    'Product Management',
+    'Agile',
+    'Scrum',
+    'Technical Writing',
   ];
-  
-  // Experience level options
+
   final List<String> _experienceLevels = [
-    'Entry Level', 'Junior', 'Mid-Level', 'Senior', 'Lead', 'Manager'
+    'Entry Level',
+    'Junior',
+    'Mid-Level',
+    'Senior',
+    'Lead',
+    'Manager',
   ];
-  
-  // Employment type options
+
   final List<String> _employmentTypes = [
-    'Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'
+    'Full-time',
+    'Part-time',
+    'Contract',
+    'Freelance',
+    'Internship',
   ];
-  
-  // Sample candidate data
+
   final List<Map<String, dynamic>> _candidates = [];
-  
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _generateSampleCandidates();
+
+    if (widget.jobId != null) {
+      _jobDocumentId = widget.jobId;
+      _loadJobFromFirestore(widget.jobId!);
+    }
   }
-  
+
   void _generateSampleCandidates() {
     final List<String> names = [
-      'John Smith', 'Emily Johnson', 'Michael Williams', 'Emma Brown',
-      'Robert Jones', 'Olivia Davis', 'William Miller', 'Sophia Wilson',
-      'James Moore', 'Isabella Taylor'
+      'John Smith',
+      'Emily Johnson',
+      'Michael Williams',
+      'Emma Brown',
+      'Robert Jones',
+      'Olivia Davis',
+      'William Miller',
+      'Sophia Wilson',
+      'James Moore',
+      'Isabella Taylor',
     ];
-    
+
     final List<String> emails = [
-      'john.smith@example.com', 'emily.j@example.com', 'michael.w@example.com',
-      'emma.brown@example.com', 'r.jones@example.com', 'olivia.d@example.com',
-      'william.m@example.com', 'sophia.w@example.com', 'james.m@example.com',
-      'isabella.t@example.com'
+      'john.smith@example.com',
+      'emily.j@example.com',
+      'michael.w@example.com',
+      'emma.brown@example.com',
+      'r.jones@example.com',
+      'olivia.d@example.com',
+      'william.m@example.com',
+      'sophia.w@example.com',
+      'james.m@example.com',
+      'isabella.t@example.com',
     ];
-    
+
     final Random random = Random();
-    
+
     for (int i = 0; i < 10; i++) {
-      // Generate random skills for each candidate (between 5-15 skills)
       final int skillCount = random.nextInt(10) + 5;
       final List<String> candidateSkills = [];
-      
-      final List<String> shuffledSkills = List.from(_availableSkills)..shuffle();
+      final List<String> shuffledSkills = List.from(_availableSkills)
+        ..shuffle();
+
       for (int j = 0; j < skillCount; j++) {
         candidateSkills.add(shuffledSkills[j]);
       }
-      
-      // Generate random years of experience
-      final int yearsOfExperience = random.nextInt(10) + 1;
-      
+
       _candidates.add({
         'name': names[i],
         'email': emails[i],
         'skills': candidateSkills,
-        'experience': yearsOfExperience,
-        'match': 0.0, // Will be calculated later
+        'experience': random.nextInt(10) + 1,
+        'match': 0.0,
         'resume': 'resume_${i + 1}.pdf',
       });
     }
   }
-  
+
   void _calculateMatchPercentages() {
     if (_selectedSkills.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please select required skills first'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
-    
+
     setState(() {
       for (final candidate in _candidates) {
-        final List<String> candidateSkills = candidate['skills'] as List<String>;
+        final List<String> candidateSkills =
+            candidate['skills'] as List<String>;
         int matchedSkills = 0;
-        
+
         for (final skill in _selectedSkills) {
           if (candidateSkills.contains(skill)) {
             matchedSkills++;
           }
         }
-        
-        // Calculate match percentage based on required skills
-        final double matchPercentage = (matchedSkills / _selectedSkills.length) * 100;
-        candidate['match'] = matchPercentage;
+
+        candidate['match'] = (matchedSkills / _selectedSkills.length) * 100;
       }
-      
-      // Sort candidates by match percentage (descending)
-      _candidates.sort((a, b) => (b['match'] as double).compareTo(a['match'] as double));
+
+      _candidates.sort(
+        (a, b) => (b['match'] as double).compareTo(a['match'] as double),
+      );
     });
   }
-  
-  void _postJob() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      
-      if (_selectedSkills.isEmpty || _selectedSkills.length > 9) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please select between 1-9 skills'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
+
+  Future<void> _saveJobToFirestore() async {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
+    if (_selectedSkills.isEmpty || _selectedSkills.length > 9) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select between 1-9 skills'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final userId = _auth.currentUser?.uid ?? 'anonymous';
+      final jobData = {
+        'jobTitle': _jobTitle,
+        'company': _company,
+        'location': _location,
+        'salary': _salary,
+        'experienceLevel': _experienceLevel,
+        'employmentType': _employmentType,
+        'requiredSkills': _selectedSkills,
+        'jobDescription': _jobDescription,
+        'postedBy': userId,
+        'postedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (_jobDocumentId != null) {
+        await _firestore.collection('jobs').doc(_jobDocumentId).update(jobData);
+      } else {
+        final docRef = await _firestore.collection('jobs').add(jobData);
+        _jobDocumentId = docRef.id;
       }
-      
-      // Simulate job posting
-      setState(() {
-        _isJobPosted = true;
-      });
-      
-      // Calculate match percentages for candidates
-      _calculateMatchPercentages();
-      
-      // Switch to candidates tab
-      _tabController.animateTo(1);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Job posted successfully!'),
+          content: Text(
+            _jobDocumentId != null ? 'Job updated!' : 'Job posted!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
+
+      setState(() => _isJobPosted = true);
+      _calculateMatchPercentages();
+      _tabController.animateTo(1);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadJobFromFirestore(String jobId) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final doc = await _firestore.collection('jobs').doc(jobId).get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        setState(() {
+          _jobTitle = data['jobTitle'] ?? '';
+          _company = data['company'] ?? '';
+          _location = data['location'] ?? '';
+          _salary = data['salary'] ?? '';
+          _experienceLevel = data['experienceLevel'] ?? 'Entry Level';
+          _employmentType = data['employmentType'] ?? 'Full-time';
+          _jobDescription = data['jobDescription'] ?? '';
+          _selectedSkills = List<String>.from(data['requiredSkills'] ?? []);
+          _isJobPosted = true;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load job: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -179,7 +313,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
         backgroundColor: Colors.black,
         elevation: 0,
         title: Text(
-          'Post New Job',
+          _jobDocumentId != null ? 'Edit Job' : 'Post New Job',
           style: GoogleFonts.poppins(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -188,31 +322,25 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.blue,
-          tabs: [
-            Tab(
-              icon: Icon(Icons.description_outlined),
-              text: 'Job Details',
-            ),
-            Tab(
-              icon: Icon(Icons.people_outline),
-              text: 'Candidates',
-            ),
+          tabs: const [
+            Tab(icon: Icon(Icons.description_outlined), text: 'Job Details'),
+            Tab(icon: Icon(Icons.people_outline), text: 'Candidates'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildJobDetailsTab(),
-          _buildCandidatesTab(),
-        ],
-      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(
+                controller: _tabController,
+                children: [_buildJobDetailsTab(), _buildCandidatesTab()],
+              ),
     );
   }
 
   Widget _buildJobDetailsTab() {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       child: Form(
         key: _formKey,
         child: Column(
@@ -226,69 +354,65 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 24),
-            
+            const SizedBox(height: 24),
+
             // Job Title Field
             _buildTextField(
               label: 'Job Title',
               hint: 'e.g., Senior Flutter Developer',
+              initialValue: _jobTitle,
               onSaved: (value) => _jobTitle = value ?? '',
-              validator: (value) => value!.isEmpty ? 'Job title is required' : null,
+              validator: (value) => value!.isEmpty ? 'Required' : null,
             ),
-            SizedBox(height: 16),
-            
+            const SizedBox(height: 16),
+
             // Company Field
             _buildTextField(
               label: 'Company',
               hint: 'e.g., Tech Solutions Inc.',
+              initialValue: _company,
               onSaved: (value) => _company = value ?? '',
-              validator: (value) => value!.isEmpty ? 'Company is required' : null,
+              validator: (value) => value!.isEmpty ? 'Required' : null,
             ),
-            SizedBox(height: 16),
-            
+            const SizedBox(height: 16),
+
             // Location Field
             _buildTextField(
               label: 'Location',
               hint: 'e.g., New York, NY (or Remote)',
+              initialValue: _location,
               onSaved: (value) => _location = value ?? '',
-              validator: (value) => value!.isEmpty ? 'Location is required' : null,
+              validator: (value) => value!.isEmpty ? 'Required' : null,
             ),
-            SizedBox(height: 16),
-            
+            const SizedBox(height: 16),
+
             // Salary Field
             _buildTextField(
               label: 'Salary Range (Optional)',
               hint: 'e.g., 80,000 - 100,000',
+              initialValue: _salary,
               onSaved: (value) => _salary = value ?? '',
             ),
-            SizedBox(height: 16),
-            
+            const SizedBox(height: 16),
+
             // Experience Level Dropdown
             _buildDropdownField(
               label: 'Experience Level',
               value: _experienceLevel,
               items: _experienceLevels,
-              onChanged: (value) {
-                setState(() {
-                  _experienceLevel = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _experienceLevel = value!),
             ),
-            SizedBox(height: 16),
-            
+            const SizedBox(height: 16),
+
             // Employment Type Dropdown
             _buildDropdownField(
               label: 'Employment Type',
               value: _employmentType,
               items: _employmentTypes,
-              onChanged: (value) {
-                setState(() {
-                  _employmentType = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _employmentType = value!),
             ),
-            SizedBox(height: 24),
-            
+            const SizedBox(height: 24),
+
             // Job Description Field
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,7 +425,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.grey.shade900,
@@ -310,21 +434,22 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                   ),
                   child: TextFormField(
                     maxLines: 6,
+                    initialValue: _jobDescription,
                     style: GoogleFonts.poppins(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'Enter detailed job description here...',
                       hintStyle: GoogleFonts.poppins(color: Colors.grey),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.all(16),
+                      contentPadding: const EdgeInsets.all(16),
                     ),
-                    validator: (value) => value!.isEmpty ? 'Job description is required' : null,
+                    validator: (value) => value!.isEmpty ? 'Required' : null,
                     onSaved: (value) => _jobDescription = value ?? '',
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 32),
-            
+            const SizedBox(height: 32),
+
             // Required Skills Section
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,36 +469,43 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                       '${_selectedSkills.length}/9',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: _selectedSkills.length > 9 ? Colors.red : Colors.grey,
+                        color:
+                            _selectedSkills.length > 9
+                                ? Colors.red
+                                : Colors.grey,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
-                
+                const SizedBox(height: 16),
+
                 // Selected skills chips
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _selectedSkills.map((skill) => Chip(
-                    label: Text(
-                      skill,
-                      style: GoogleFonts.poppins(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    backgroundColor: Colors.blue,
-                    deleteIconColor: Colors.black87,
-                    onDeleted: () {
-                      setState(() {
-                        _selectedSkills.remove(skill);
-                      });
-                    },
-                  )).toList(),
+                  children:
+                      _selectedSkills
+                          .map(
+                            (skill) => Chip(
+                              label: Text(
+                                skill,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              backgroundColor: Colors.blue,
+                              deleteIconColor: Colors.black87,
+                              onDeleted:
+                                  () => setState(
+                                    () => _selectedSkills.remove(skill),
+                                  ),
+                            ),
+                          )
+                          .toList(),
                 ),
-                SizedBox(height: 16),
-                
+                const SizedBox(height: 16),
+
                 // Available skills grid
                 Container(
                   height: 200,
@@ -383,35 +515,39 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                     border: Border.all(color: Colors.grey.shade800),
                   ),
                   child: GridView.builder(
-                    padding: EdgeInsets.all(12),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 2.5,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 2.5,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
                     itemCount: _availableSkills.length,
                     itemBuilder: (context, index) {
                       final skill = _availableSkills[index];
                       final isSelected = _selectedSkills.contains(skill);
-                      
+
                       return InkWell(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedSkills.remove(skill);
-                            } else if (_selectedSkills.length < 9) {
-                              _selectedSkills.add(skill);
-                            }
-                          });
-                        },
+                        onTap:
+                            () => setState(() {
+                              if (isSelected) {
+                                _selectedSkills.remove(skill);
+                              } else if (_selectedSkills.length < 9) {
+                                _selectedSkills.add(skill);
+                              }
+                            }),
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue : Colors.transparent,
+                            color:
+                                isSelected ? Colors.blue : Colors.transparent,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isSelected ? Colors.blue : Colors.grey.shade700,
+                              color:
+                                  isSelected
+                                      ? Colors.blue
+                                      : Colors.grey.shade700,
                             ),
                           ),
                           child: Center(
@@ -420,7 +556,10 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                               style: GoogleFonts.poppins(
                                 color: isSelected ? Colors.black : Colors.white,
                                 fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w500
+                                        : FontWeight.normal,
                               ),
                               textAlign: TextAlign.center,
                               overflow: TextOverflow.ellipsis,
@@ -433,15 +572,19 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                 ),
               ],
             ),
-            SizedBox(height: 32),
-            
+            const SizedBox(height: 32),
+
             // Post Job Button
             Center(
               child: ElevatedButton(
-                onPressed: _postJob,
+                onPressed: _isLoading ? null : _saveJobToFirestore,
                 style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white, backgroundColor: Colors.blue,
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -451,10 +594,10 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.publish),
-                    SizedBox(width: 12),
+                    const Icon(Icons.publish),
+                    const SizedBox(width: 12),
                     Text(
-                      'Post Job',
+                      _jobDocumentId != null ? 'Update Job' : 'Post Job',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -464,7 +607,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                 ),
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -477,36 +620,28 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.work_outline,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
+            const Icon(Icons.work_outline, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
             Text(
               'Post a job to see matching candidates',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                _tabController.animateTo(0);
-              },
+              onPressed: () => _tabController.animateTo(0),
               style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.blue,
               ),
-              child: Text('Go to Job Details'),
+              child: const Text('Go to Job Details'),
             ),
           ],
         ),
       );
     }
-    
+
     return SingleChildScrollView(
-      padding: EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -518,19 +653,16 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
               color: Colors.white,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Based on the required skills for $_jobTitle',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
           ),
-          SizedBox(height: 24),
-          
+          const SizedBox(height: 24),
+
           // Job skills summary
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey.shade900,
               borderRadius: BorderRadius.circular(12),
@@ -547,27 +679,32 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _selectedSkills.map((skill) => Chip(
-                    label: Text(
-                      skill,
-                      style: GoogleFonts.poppins(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                    backgroundColor: Colors.blue,
-                  )).toList(),
+                  children:
+                      _selectedSkills
+                          .map(
+                            (skill) => Chip(
+                              label: Text(
+                                skill,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              backgroundColor: Colors.blue,
+                            ),
+                          )
+                          .toList(),
                 ),
               ],
             ),
           ),
-          SizedBox(height: 24),
-          
+          const SizedBox(height: 24),
+
           // Candidates list
           ..._candidates.map((candidate) => _buildCandidateCard(candidate)),
         ],
@@ -580,6 +717,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
     required String hint,
     required Function(String?) onSaved,
     String? Function(String?)? validator,
+    String? initialValue,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,7 +730,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
             color: Colors.white,
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             color: Colors.grey.shade900,
@@ -600,12 +738,16 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
             border: Border.all(color: Colors.grey.shade800),
           ),
           child: TextFormField(
+            initialValue: initialValue,
             style: GoogleFonts.poppins(color: Colors.white),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: GoogleFonts.poppins(color: Colors.grey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             validator: validator,
             onSaved: onSaved,
@@ -632,27 +774,28 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
             color: Colors.white,
           ),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
             color: Colors.grey.shade900,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade800),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
               dropdownColor: Colors.grey.shade900,
               style: GoogleFonts.poppins(color: Colors.white),
-              icon: Icon(Icons.arrow_drop_down, color: Colors.white),
-              items: items.map((String item) {
-                return DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item),
-                );
-              }).toList(),
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+              items:
+                  items.map((String item) {
+                    return DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(item),
+                    );
+                  }).toList(),
               onChanged: onChanged,
             ),
           ),
@@ -663,32 +806,32 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
 
   Widget _buildCandidateCard(Map<String, dynamic> candidate) {
     final double matchPercentage = candidate['match'] as double;
-    
-    Color getMatchColor() {
-      if (matchPercentage >= 80) return Colors.green;
-      if (matchPercentage >= 50) return Colors.orange;
-      return Colors.red;
-    }
-    
+    final Color matchColor =
+        matchPercentage >= 80
+            ? Colors.green
+            : matchPercentage >= 50
+            ? Colors.orange
+            : Colors.red;
+
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.grey.shade900,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade800),
       ),
       child: ExpansionTile(
-        tilePadding: EdgeInsets.all(16),
+        tilePadding: const EdgeInsets.all(16),
         title: Row(
           children: [
             CircleAvatar(
               backgroundColor: Colors.grey.shade800,
               child: Text(
                 candidate['name'].toString().substring(0, 1),
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,7 +844,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     candidate['email'],
                     style: GoogleFonts.poppins(
@@ -713,9 +856,9 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
               ),
             ),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: getMatchColor().withOpacity(0.2),
+                color: matchColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -723,7 +866,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: getMatchColor(),
+                  color: matchColor,
                 ),
               ),
             ),
@@ -731,16 +874,20 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
         ),
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Divider(color: Colors.grey.shade800),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.work_outline, size: 16, color: Colors.grey),
-                    SizedBox(width: 8),
+                    const Icon(
+                      Icons.work_outline,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       '${candidate['experience']} years of experience',
                       style: GoogleFonts.poppins(
@@ -750,11 +897,15 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.description_outlined, size: 16, color: Colors.grey),
-                    SizedBox(width: 8),
+                    const Icon(
+                      Icons.description_outlined,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       'Resume: ${candidate['resume']}',
                       style: GoogleFonts.poppins(
@@ -764,7 +915,7 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   'Skills',
                   style: GoogleFonts.poppins(
@@ -773,46 +924,45 @@ class _JobDescriptionPage extends State<JobDescriptionPage> with SingleTickerPro
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: (candidate['skills'] as List<String>).map((skill) {
-                    final bool isMatched = _selectedSkills.contains(skill);
-                    return Chip(
-                      label: Text(
-                        skill,
-                        style: GoogleFonts.poppins(
-                          color: isMatched ? Colors.black : Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                      backgroundColor: isMatched ? Colors.green : Colors.grey.shade800,
-                    );
-                  }).toList(),
+                  children:
+                      (candidate['skills'] as List<String>).map((skill) {
+                        final isMatched = _selectedSkills.contains(skill);
+                        return Chip(
+                          label: Text(
+                            skill,
+                            style: GoogleFonts.poppins(
+                              color: isMatched ? Colors.black : Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          backgroundColor:
+                              isMatched ? Colors.green : Colors.grey.shade800,
+                        );
+                      }).toList(),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     OutlinedButton(
-                      onPressed: () {
-                        // View resume action
-                      },
+                      onPressed: () {},
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white, side: BorderSide(color: Colors.grey.shade700),
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: Colors.grey.shade700),
                       ),
-                      child: Text('View Resume'),
+                      child: const Text('View Resume'),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {
-                        // Contact candidate action
-                      },
+                      onPressed: () {},
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                       ),
-                      child: Text('Contact'),
+                      child: const Text('Contact'),
                     ),
                   ],
                 ),
