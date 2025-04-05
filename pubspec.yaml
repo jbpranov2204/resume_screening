@@ -34,6 +34,8 @@ dependencies:
   supercharged: ^2.1.1
   animate_do: ^3.3.0
   gif: ^2.3.0
+  animated_text_kit: ^4.2.2
+  marquee: ^2.2.3
     
 
   # The following adds the Cupertino Icons font to your application.

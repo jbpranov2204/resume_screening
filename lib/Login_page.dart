@@ -3,12 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:marquee/marquee.dart';
 import 'package:resume_screening/1_page.dart';
-import 'package:resume_screening/new.dart';
-import 'package:resume_screening/2_page.dart';
-import 'package:simple_animations/simple_animations.dart';
-import 'package:supercharged/supercharged.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:resume_screening/user_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -101,8 +99,6 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-
-
   void _playErrorAnimation() {
     // Play shake animation
     _shakeController.forward(from: 0.0);
@@ -111,6 +107,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         _shakeController.reset();
       }
     });
+  }
+
+  // Navigate to user page
+  void _navigateToUserPage() {
+    // Add haptic feedback for better user experience
+    HapticFeedback.mediumImpact();
+    
+    // Navigate to user page (assuming it's the JobOpeningsPage)
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DashboardPage()),
+    );
   }
 
   // Enhanced input decoration with animations
@@ -172,81 +180,169 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      body: Stack(
         children: [
-          // Left Side: Background with asset image and professional text
-          Expanded(
-            flex: 2,
-            child: Stack(
-              children: [
-                // Use the asset image as the background
-              Stack(
-  children: [
-    SizedBox.expand(
-      child: Image.asset(
-        'assets/n.jpg',
-        fit: BoxFit.cover,
-      ),
-    ),
-    Container(
-      // Your content goes here
-    ),
-  ],
-),
-
-                // Optional: retain a subtle particle animation
-                CustomPaint(
-                  painter: ParticlesPainter(particles),
-                  child: Container(),
-                ),
-                // Professional text in the center of the left side
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Text(
-                      "Empowering Your Business with Innovative Technology",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            blurRadius: 10,
-                            color: Colors.black.withOpacity(0.3),
-                            offset: const Offset(0, 5),
-                          )
+          // Animated "Job Openings" text at the top - Now Clickable
+          Positioned(
+            top: 30,
+            left: 700,
+            right: 40,
+            child: Center(
+                child: GestureDetector(
+                  onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => JobOpeningApp()),
+      );
+    },
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      height: 35,
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color.fromARGB(75, 46, 158, 255).withOpacity(0.8),
+                            const Color.fromARGB(109, 156, 196, 243).withOpacity(0.8),
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromARGB(66, 255, 226, 226),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.work_outline,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 10),
+                          // Fixed Marquee implementation
+                          Expanded(
+                            child: Marquee(
+                              text: 'Job Openings • Find Your Dream Job • Apply Now • ',
+                              style: GoogleFonts.poppins(
+                                fontSize: 18, // Slightly smaller font
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              scrollAxis: Axis.horizontal,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              blankSpace: 40.0,
+                              velocity: 50.0,
+                              pauseAfterRound: Duration(seconds: 1),
+                              startPadding: 10.0,
+                              accelerationDuration: Duration(seconds: 1),
+                              accelerationCurve: Curves.linear,
+                              decelerationDuration: Duration(milliseconds: 500),
+                              decelerationCurve: Curves.easeOut,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
-              ],
+            
             ),
           ),
-          // Right Side: Login Content
-          Expanded(
-            flex: 3,
-            child: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: FadeInUp(
-                      duration: const Duration(milliseconds: 800),
-                      delay: const Duration(milliseconds: 300),
-                      child: _buildLoginCard(),
+          
+          // Main content
+          Row(
+            children: [
+              // Left Side: Background with asset image and professional text
+              Expanded(
+                flex: 2,
+                child: Stack(
+                  children: [
+                    // Use the asset image as the background
+                    Stack(
+                      children: [
+                        SizedBox.expand(
+                          child: Image.asset(
+                            'assets/n.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Container(
+                          // Your content goes here
+                        ),
+                      ],
+                    ),
+
+                    // Optional: retain a subtle particle animation
+                    CustomPaint(
+                      painter: ParticlesPainter(particles),
+                      child: Container(),
+                    ),
+                    // Professional text in the center of the left side
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Text(
+                          "Empowering Your Business with Innovative Technology",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 10,
+                                color: Colors.black.withOpacity(0.3),
+                                offset: const Offset(0, 5),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Right Side: Login Content
+              Expanded(
+                flex: 3,
+                child: SafeArea(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: FadeInUp(
+                          duration: const Duration(milliseconds: 800),
+                          delay: const Duration(milliseconds: 300),
+                          child: _buildLoginCard(),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
+  // The rest of your code remains the same...
   Widget _buildLoginCard() {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
