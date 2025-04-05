@@ -1,38 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:resume_screening/2_page.dart';
 
-class ResumeScreeningPage extends StatefulWidget {
+class DashboardPage extends StatefulWidget {
   @override
-  _ResumeScreeningPageState createState() => _ResumeScreeningPageState();
+  _DashboardPageState createState() => _DashboardPageState();
 }
 
-class _ResumeScreeningPageState extends State<ResumeScreeningPage>
-    with SingleTickerProviderStateMixin {
-  String? _fileName;
-  String _jobDescription = '';
-  bool _isProcessing = false;
-  double _matchPercentage = 0.0;
-  List<String> _matchedSkills = [];
-  List<String> _missingSkills = [];
+class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin {
+  final String _username = "John Doe";
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  
+  // Sample job history data
+  final List<Map<String, dynamic>> _jobHistory = [
+    {
+      'title': 'Flutter Developer',
+      'company': 'Tech Solutions Inc.',
+      'date': '2023-05-15',
+      'applicants': 24,
+      'status': 'Active',
+    },
+    {
+      'title': 'Machine Learning Engineer',
+      'company': 'AI Innovations',
+      'date': '2023-04-10',
+      'applicants': 18,
+      'status': 'Closed',
+    },
+    {
+      'title': 'Full Stack Developer',
+      'company': 'WebWorks Ltd.',
+      'date': '2023-03-22',
+      'applicants': 32,
+      'status': 'Active',
+    },
+    {
+      'title': 'Mobile App Developer',
+      'company': 'AppGenius',
+      'date': '2023-02-05',
+      'applicants': 15,
+      'status': 'Closed',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeIn,
-      ),
-    );
-    _animationController.forward();
   }
 
   @override
@@ -41,239 +58,263 @@ class _ResumeScreeningPageState extends State<ResumeScreeningPage>
     super.dispose();
   }
 
-  Future<void> _pickFile() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'txt', 'doc', 'docx'],
-      );
-
-      if (result != null) {
-        setState(() {
-          _fileName = result.files.single.name;
-        });
-      }
-    } on PlatformException catch (e) {
-      print("Unsupported operation" + e.toString());
-    }
+  void _showProfileMenu() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade800),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundImage: NetworkImage('https://randomuser.me/api/portraits/men/1.jpg'),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  _username,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'john.doe@example.com',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 24),
+                _buildProfileMenuItem(Icons.person, 'Edit Profile'),
+                _buildProfileMenuItem(Icons.settings, 'Settings'),
+                _buildProfileMenuItem(Icons.help_outline, 'Help & Support'),
+                Divider(color: Colors.grey.shade800),
+                _buildProfileMenuItem(Icons.logout, 'Sign Out', isSignOut: true),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  void _analyzeResume() {
-    if (_fileName == null || _jobDescription.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please upload a resume and enter job description')),
-      );
-      return;
-    }
+  Widget _buildProfileMenuItem(IconData icon, String title, {bool isSignOut = false}) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context);
+        // Add specific actions for each menu item
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSignOut ? Colors.redAccent : Colors.white,
+              size: 20,
+            ),
+            SizedBox(width: 16),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: isSignOut ? Colors.redAccent : Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    setState(() {
-      _isProcessing = true;
-      _matchPercentage = 0.0;
-      _matchedSkills = [];
-      _missingSkills = [];
-    });
-
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() {
-        _isProcessing = false;
-        _matchPercentage = 78.5;
-        _matchedSkills = [
-          'Flutter',
-          'Dart',
-          'Firebase',
-          'UI/UX Design',
-          'Agile Methodology'
-        ];
-        _missingSkills = ['Machine Learning', 'Python', 'TensorFlow'];
-      });
-    });
+  void _navigateToJobUpload() {
+    // Navigate to job upload page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => JobDescriptionPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: Scaffold(
-        backgroundColor: const Color.fromARGB(255, 11, 0, 58),
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: GestureDetector(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => Dialog(
-                  backgroundColor: Colors.transparent,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXP-e5fI-fDl0csJciATRBP9XkYCRJsPTtRQ&s',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              );
-            },
-            child: CircleAvatar(
-              backgroundImage: NetworkImage(
-                  'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXP-e5fI-fDl0csJciATRBP9XkYCRJsPTtRQ&s'),
-              radius: 18,
-            ),
-          ),
-          centerTitle: false,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: Icon(Icons.notifications_none_rounded),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('No new notifications')),
-                );
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.settings),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Settings clicked')),
-                );
-              },
-            ),
-            SizedBox(width: 8),
-          ],
-        ),
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildWelcomeSection(),
-              SizedBox(height: 32),
-              _buildTransparentContainer(),
-              if (_matchPercentage > 0) ...[
-                SizedBox(height: 32),
-                _buildResultsSection(),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWelcomeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Welcome back, John!',
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        title: Text(
+          'Dashboard',
           style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
             color: Colors.white,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        SizedBox(height: 8),
-        Text(
-          'Upload a resume and job description to analyze the match',
-          style: GoogleFonts.poppins(
-            fontSize: 15,
-            color: Colors.white70,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {},
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTransparentContainer() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 40),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              _buildResumeUploadCard(),
-              SizedBox(height: 24),
-              _buildJobDescriptionCard(),
-              SizedBox(height: 24),
-              _buildAnalyzeButton(),
-            ],
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: GestureDetector(
+              onTap: _showProfileMenu,
+              child: CircleAvatar(
+                radius: 18,
+                backgroundImage: NetworkImage('https://randomuser.me/api/portraits/men/1.jpg'),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildResumeUploadCard() {
-    return Card(
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(27),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(27),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Welcome message
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  color: Colors.white,
+                ),
+                children: [
+                  TextSpan(text: 'Welcome back, '),
+                  TextSpan(
+                    text: _username,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Manage your job listings and review applicants',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: 32),
+            
+            // Stats overview
             Row(
               children: [
-                Icon(Icons.upload_file, size: 20, color: Colors.blue),
-                SizedBox(width: 8),
+                _buildStatCard('Active Jobs', '2', Icons.work_outline),
+                SizedBox(width: 16),
+                _buildStatCard('Total Applicants', '74', Icons.people_outline),
+                SizedBox(width: 16),
+                _buildStatCard('Pending Review', '12', Icons.pending_outlined),
+              ],
+            ),
+            
+            SizedBox(height: 32),
+            
+            // Job History section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 Text(
-                  'Upload Resume',
+                  'Recent Job Listings',
                   style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // View all jobs
+                  },
+                  child: Text(
+                    'View All',
+                    style: GoogleFonts.poppins(
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
               ],
             ),
             SizedBox(height: 16),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _pickFile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            
+            // Job history list
+            ..._jobHistory.map((job) => _buildJobHistoryCard(job)),
+            
+            SizedBox(height: 40),
+            
+            // Add new job button
+            Center(
+              child: ElevatedButton(
+                onPressed: _navigateToJobUpload,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white, backgroundColor: Colors.blue,
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.attach_file, size: 18),
-                      SizedBox(width: 8),
-                      Text('Choose File'),
-                    ],
-                  ),
+                  elevation: 5,
+                  shadowColor: Colors.blue.withOpacity(0.5),
                 ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    _fileName ?? 'No file selected',
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      color: _fileName == null ? Colors.grey : Colors.white,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_circle_outline),
+                    SizedBox(width: 12),
+                    Text(
+                      'Post New Job',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade900,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade800),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: Colors.blue, size: 24),
             SizedBox(height: 12),
             Text(
-              'Supported formats: PDF, DOC, DOCX, TXT',
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              title,
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.grey,
@@ -285,250 +326,99 @@ class _ResumeScreeningPageState extends State<ResumeScreeningPage>
     );
   }
 
-  Widget _buildJobDescriptionCard() {
-    return Card(
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+  Widget _buildJobHistoryCard(Map<String, dynamic> job) {
+    final bool isActive = job['status'] == 'Active';
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade800),
       ),
-      child: Padding(
-        padding: EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.description_outlined, size: 20, color: Colors.blue),
-                SizedBox(width: 8),
-                Text(
-                  'Job Description',
-                  style: GoogleFonts.poppins(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            TextField(
-              maxLines: 8,
-              decoration: InputDecoration(
-                hintText: 'Paste the job description here...',
-                hintStyle: GoogleFonts.poppins(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
-                contentPadding: EdgeInsets.all(16),
-              ),
-              style: GoogleFonts.poppins(color: Colors.white),
-              onChanged: (value) => setState(() => _jobDescription = value),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAnalyzeButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isProcessing ? null : _analyzeResume,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue[800],
-          foregroundColor: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: _isProcessing
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : Text(
-                'ANALYZE RESUME',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildResultsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Analysis Results',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        SizedBox(height: 16),
-        Card(
-          color: Colors.white.withOpacity(0.1),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // Navigate to job details
+          },
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMatchScoreIndicator(),
-                SizedBox(height: 24),
-                _buildSkillsComparison(),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMatchScoreIndicator() {
-    final color = _matchPercentage > 70
-        ? Colors.green
-        : _matchPercentage > 40
-            ? Colors.orange
-            : Colors.red;
-
-    return Column(
-      children: [
-        Text(
-          'Match Score',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            color: Colors.grey,
-          ),
-        ),
-        SizedBox(height: 12),
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 140,
-              height: 140,
-              child: CircularProgressIndicator(
-                value: _matchPercentage / 100,
-                strokeWidth: 10,
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-            ),
-            Column(
-              children: [
-                Text(
-                  '${_matchPercentage.toStringAsFixed(1)}%',
-                  style: GoogleFonts.poppins(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  _matchPercentage > 70
-                      ? 'Strong Match'
-                      : _matchPercentage > 40
-                          ? 'Moderate Match'
-                          : 'Weak Match',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkillsComparison() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _buildSkillsList(
-            title: 'Matched Skills',
-            skills: _matchedSkills,
-            icon: Icons.check_circle,
-            color: Colors.green,
-          ),
-        ),
-        SizedBox(width: 16),
-        Expanded(
-          child: _buildSkillsList(
-            title: 'Missing Skills',
-            skills: _missingSkills,
-            icon: Icons.remove_circle_outline,
-            color: Colors.red,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkillsList({
-    required String title,
-    required List<String> skills,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-        SizedBox(height: 12),
-        if (skills.isEmpty)
-          Text(
-            'None',
-            style: GoogleFonts.poppins(
-              color: Colors.grey,
-              fontStyle: FontStyle.italic,
-            ),
-          )
-        else
-          ...skills.map((skill) => Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(icon, size: 18, color: color),
-                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        skill,
-                        style: GoogleFonts.poppins(color: Colors.white),
+                        job['title'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isActive ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        job['status'],
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: isActive ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              )),
-      ],
+                SizedBox(height: 8),
+                Text(
+                  job['company'],
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.person_outline, size: 16, color: Colors.grey),
+                        SizedBox(width: 4),
+                        Text(
+                          '${job['applicants']} applicants',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Posted: ${job['date']}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
+

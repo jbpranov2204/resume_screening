@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:resume_screening/1_page.dart';
+import 'package:resume_screening/new.dart';
+import 'package:resume_screening/2_page.dart';
 import 'package:simple_animations/simple_animations.dart';
 import 'package:supercharged/supercharged.dart';
 import 'package:animate_do/animate_do.dart';
@@ -182,7 +184,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   children: [
     SizedBox.expand(
       child: Image.asset(
-        'assets/n1.gif',
+        'assets/n.jpg',
         fit: BoxFit.cover,
       ),
     ),
@@ -266,7 +268,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             padding: const EdgeInsets.all(32),
             width: 400,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(_isLoading ? 0.2 : 0.15),
+              color: const Color.fromARGB(255, 255, 255, 255).withOpacity(_isLoading ? 0.2 : 0.15),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: Colors.grey.withOpacity(0.2),
@@ -274,7 +276,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.white,
                   blurRadius: 20,
                   spreadRadius: 5,
                   offset: const Offset(0, 5),
@@ -477,7 +479,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           onTap:(){
                             Navigator.push(
                             context,
-                             MaterialPageRoute(builder: (context) => ResumeScreeningPage()),
+                             MaterialPageRoute(builder: (context) => DashboardPage()),
                              );
                           },
                           onTapDown: (_) {
