@@ -5,30 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(JobOpeningApp());
-}
-
-class JobOpeningApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Job Openings',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        scaffoldBackgroundColor: Colors.black,
-      ),
-      home: JobOpeningsPage(),
-    );
-  }
-}
 
 class JobOpeningsPage extends StatefulWidget {
   @override
@@ -39,7 +15,6 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
   final TextEditingController _searchController = TextEditingController();
   Map<String, PlatformFile?> _resumeFiles = {};
   bool _isLoading = false;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Sample job openings data
   final List<Map<String, dynamic>> _jobOpenings = [
@@ -200,9 +175,6 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       print('Resume Analysis Result:');
       print(jsonResponse);
 
-      // Store the response in Firestore
-      await _storeAnalysisResult(jobId, job['title'], jsonResponse);
-
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -224,25 +196,6 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<void> _storeAnalysisResult(
-    String jobId,
-    String jobTitle,
-    Map<String, dynamic> analysisResult,
-  ) async {
-    try {
-      await _firestore.collection('resume_analysis_results').add({
-        'jobId': jobId,
-        'jobTitle': jobTitle,
-        'analysisResult': analysisResult,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-      print('Analysis result stored in Firestore');
-    } catch (e) {
-      print('Error storing analysis result: $e');
-      throw e;
     }
   }
 

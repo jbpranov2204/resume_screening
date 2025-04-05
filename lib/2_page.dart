@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class JobDescriptionPage extends StatefulWidget {
   final String? jobId; // For editing existing jobs
@@ -108,100 +109,15 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
     'Internship',
   ];
 
-  final List<Map<String, dynamic>> _candidates = [];
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _generateSampleCandidates();
 
     if (widget.jobId != null) {
       _jobDocumentId = widget.jobId;
       _loadJobFromFirestore(widget.jobId!);
     }
-  }
-
-  void _generateSampleCandidates() {
-    final List<String> names = [
-      'John Smith',
-      'Emily Johnson',
-      'Michael Williams',
-      'Emma Brown',
-      'Robert Jones',
-      'Olivia Davis',
-      'William Miller',
-      'Sophia Wilson',
-      'James Moore',
-      'Isabella Taylor',
-    ];
-
-    final List<String> emails = [
-      'john.smith@example.com',
-      'emily.j@example.com',
-      'michael.w@example.com',
-      'emma.brown@example.com',
-      'r.jones@example.com',
-      'olivia.d@example.com',
-      'william.m@example.com',
-      'sophia.w@example.com',
-      'james.m@example.com',
-      'isabella.t@example.com',
-    ];
-
-    final Random random = Random();
-
-    for (int i = 0; i < 10; i++) {
-      final int skillCount = random.nextInt(10) + 5;
-      final List<String> candidateSkills = [];
-      final List<String> shuffledSkills = List.from(_availableSkills)
-        ..shuffle();
-
-      for (int j = 0; j < skillCount; j++) {
-        candidateSkills.add(shuffledSkills[j]);
-      }
-
-      _candidates.add({
-        'name': names[i],
-        'email': emails[i],
-        'skills': candidateSkills,
-        'experience': random.nextInt(10) + 1,
-        'match': 0.0,
-        'resume': 'resume_${i + 1}.pdf',
-      });
-    }
-  }
-
-  void _calculateMatchPercentages() {
-    if (_selectedSkills.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select required skills first'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      for (final candidate in _candidates) {
-        final List<String> candidateSkills =
-            candidate['skills'] as List<String>;
-        int matchedSkills = 0;
-
-        for (final skill in _selectedSkills) {
-          if (candidateSkills.contains(skill)) {
-            matchedSkills++;
-          }
-        }
-
-        candidate['match'] = (matchedSkills / _selectedSkills.length) * 100;
-      }
-
-      _candidates.sort(
-        (a, b) => (b['match'] as double).compareTo(a['match'] as double),
-      );
-    });
   }
 
   Future<void> _saveJobToFirestore() async {
@@ -234,6 +150,7 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
         'postedBy': userId,
         'postedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': true,
       };
 
       if (_jobDocumentId != null) {
@@ -253,7 +170,6 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
       );
 
       setState(() => _isJobPosted = true);
-      _calculateMatchPercentages();
       _tabController.animateTo(1);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -319,22 +235,11 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
             fontWeight: FontWeight.w600,
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.blue,
-          tabs: const [
-            Tab(icon: Icon(Icons.description_outlined), text: 'Job Details'),
-            Tab(icon: Icon(Icons.people_outline), text: 'Candidates'),
-          ],
-        ),
       ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : TabBarView(
-                controller: _tabController,
-                children: [_buildJobDetailsTab(), _buildCandidatesTab()],
-              ),
+              : _buildJobDetailsTab(), // Remove TabBarView
     );
   }
 
@@ -614,104 +519,6 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
     );
   }
 
-  Widget _buildCandidatesTab() {
-    if (!_isJobPosted) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.work_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'Post a job to see matching candidates',
-              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => _tabController.animateTo(0),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.blue,
-              ),
-              child: const Text('Go to Job Details'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Matching Candidates',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Based on the required skills for $_jobTitle',
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-
-          // Job skills summary
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade900,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade800),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Required Skills',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children:
-                      _selectedSkills
-                          .map(
-                            (skill) => Chip(
-                              label: Text(
-                                skill,
-                                style: GoogleFonts.poppins(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              backgroundColor: Colors.blue,
-                            ),
-                          )
-                          .toList(),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Candidates list
-          ..._candidates.map((candidate) => _buildCandidateCard(candidate)),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTextField({
     required String label,
     required String hint,
@@ -801,176 +608,6 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCandidateCard(Map<String, dynamic> candidate) {
-    final double matchPercentage = candidate['match'] as double;
-    final Color matchColor =
-        matchPercentage >= 80
-            ? Colors.green
-            : matchPercentage >= 50
-            ? Colors.orange
-            : Colors.red;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade800),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.all(16),
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey.shade800,
-              child: Text(
-                candidate['name'].toString().substring(0, 1),
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    candidate['name'],
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    candidate['email'],
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: matchColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${matchPercentage.toStringAsFixed(1)}%',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: matchColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Divider(color: Colors.grey.shade800),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.work_outline,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${candidate['experience']} years of experience',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.description_outlined,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Resume: ${candidate['resume']}',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Skills',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children:
-                      (candidate['skills'] as List<String>).map((skill) {
-                        final isMatched = _selectedSkills.contains(skill);
-                        return Chip(
-                          label: Text(
-                            skill,
-                            style: GoogleFonts.poppins(
-                              color: isMatched ? Colors.black : Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
-                          backgroundColor:
-                              isMatched ? Colors.green : Colors.grey.shade800,
-                        );
-                      }).toList(),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: Colors.grey.shade700),
-                      ),
-                      child: const Text('View Resume'),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                      ),
-                      child: const Text('Contact'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -192,7 +192,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   onTap: () {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => JobOpeningApp()),
+        MaterialPageRoute(builder: (context) => JobOpeningsPage()),
       );
     },
                   child: MouseRegion(

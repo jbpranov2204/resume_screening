@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:resume_screening/2_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Add this import for date formatting
+import 'package:intl/intl.dart';
+import 'package:resume_screening/candidates.dart'; // Add this import for date formatting
 
 class DashboardPage extends StatefulWidget {
   @override
@@ -277,36 +278,84 @@ class _DashboardPageState extends State<DashboardPage>
 
             SizedBox(height: 40),
 
-            // Add new job button
+            // Add new job and candidates buttons
             Center(
-              child: ElevatedButton(
-                onPressed: _navigateToJobUpload,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.blue,
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 5,
-                  shadowColor: Colors.blue.withOpacity(0.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_circle_outline),
-                    SizedBox(width: 12),
-                    Text(
-                      'Post New Job',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _navigateToJobUpload,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
                       ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                      shadowColor: Colors.blue.withOpacity(0.5),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_circle_outline),
+                        SizedBox(width: 12),
+                        Text(
+                          'Post New Job',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CandidatesPage(),
+                        ),
+                      );
+                      // Navigate to candidates page
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 5,
+                      shadowColor: Colors.green.withOpacity(0.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people_outline),
+                        SizedBox(width: 12),
+                        Text(
+                          'Candidates',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+            SizedBox(height: 40),
           ],
         ),
       ),
