@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class JobOpeningsPage extends StatefulWidget {
   @override
@@ -16,81 +17,26 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
   Map<String, PlatformFile?> _resumeFiles = {};
   bool _isLoading = false;
 
+  // Firestore instance
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Stream for jobs
+  Stream<QuerySnapshot>? _jobsStream;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize jobs stream from Firestore with error handling
+    try {
+      _jobsStream = _firestore.collection('jobs').snapshots();
+    } catch (e) {
+      print('Error initializing Firestore stream: $e');
+    }
+  }
+
   // Sample job openings data
-  final List<Map<String, dynamic>> _jobOpenings = [
-    {
-      'id': '1',
-      'title': 'Flutter Developer',
-      'company': 'Tech Solutions Inc.',
-      'location': 'New York, NY',
-      'salary': '\$80,000 - \$100,000',
-      'experienceLevel': 'Mid-Level',
-      'employmentType': 'Full-time',
-      'description':
-          'We are seeking a skilled Flutter Developer to join our team. You will be responsible for developing and maintaining mobile applications using Flutter. The ideal candidate has experience with Dart and Firebase, and is comfortable working in an Agile environment.',
-      'skills': ['Flutter', 'Dart', 'Firebase', 'Git', 'REST API'],
-    },
-    {
-      'id': '2',
-      'title': 'Machine Learning Engineer',
-      'company': 'AI Innovations',
-      'location': 'San Francisco, CA',
-      'salary': '\$100,000 - \$120,000',
-      'experienceLevel': 'Senior',
-      'employmentType': 'Contract',
-      'description':
-          'AI Innovations is looking for a Machine Learning Engineer to design and implement machine learning models. You will work closely with data scientists and software engineers to integrate ML solutions into our products. Experience with TensorFlow and Python is required.',
-      'skills': [
-        'Python',
-        'TensorFlow',
-        'Machine Learning',
-        'Data Science',
-        'PyTorch',
-      ],
-    },
-    {
-      'id': '3',
-      'title': 'Full Stack Developer',
-      'company': 'WebWorks Ltd.',
-      'location': 'Remote',
-      'salary': '\$90,000 - \$110,000',
-      'experienceLevel': 'Senior',
-      'employmentType': 'Freelance',
-      'description':
-          'WebWorks is hiring a Full Stack Developer to build and maintain web applications. You will be responsible for both frontend and backend development. We are looking for someone with experience in JavaScript, React, and Node.js.',
-      'skills': ['JavaScript', 'React', 'Node.js', 'MongoDB', 'Express.js'],
-    },
-    {
-      'id': '4',
-      'title': 'UI/UX Designer',
-      'company': 'Creative Designs',
-      'location': 'Chicago, IL',
-      'salary': '\$75,000 - \$95,000',
-      'experienceLevel': 'Mid-Level',
-      'employmentType': 'Full-time',
-      'description':
-          'Creative Designs is seeking a talented UI/UX Designer to create beautiful and functional user interfaces. You will work closely with product managers and developers to implement your designs. Experience with Figma and Adobe XD is required.',
-      'skills': [
-        'UI/UX Design',
-        'Figma',
-        'Adobe XD',
-        'Prototyping',
-        'User Research',
-      ],
-    },
-    {
-      'id': '5',
-      'title': 'DevOps Engineer',
-      'company': 'Cloud Solutions',
-      'location': 'Seattle, WA',
-      'salary': '\$110,000 - \$130,000',
-      'experienceLevel': 'Senior',
-      'employmentType': 'Full-time',
-      'description':
-          'Cloud Solutions is looking for a DevOps Engineer to improve our infrastructure and deployment processes. You will be responsible for implementing CI/CD pipelines and managing cloud resources. Experience with AWS, Docker, and Kubernetes is required.',
-      'skills': ['DevOps', 'AWS', 'Docker', 'Kubernetes', 'CI/CD'],
-    },
-  ];
+  final List<Map<String, dynamic>> _jobOpenings = [];
 
   List<Map<String, dynamic>> get _filteredJobOpenings {
     if (_searchController.text.isEmpty) {
@@ -108,7 +54,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
         }
       }
 
-      bool hasMatchingTitle = job['title'].toLowerCase().contains(searchQuery);
+      bool hasMatchingTitle = job['jobTitle'].toLowerCase().contains(
+        searchQuery,
+      );
       return hasMatchingSkill || hasMatchingTitle;
     }).toList();
   }
@@ -175,11 +123,19 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       print('Resume Analysis Result:');
       print(jsonResponse);
 
+      // Save analysis results to Firestore
+      await _firestore.collection('resume_analysis_results').add({
+        'jobId': jobId,
+        'jobTitle': job['jobTitle'],
+        'analysisResult': jsonResponse,
+        'submittedAt': FieldValue.serverTimestamp(),
+      });
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Resume submitted and analyzed successfully for ${job['title']} position',
+            'Resume submitted and analyzed successfully for ${job['jobTitle']} position',
           ),
           backgroundColor: Colors.green,
         ),
@@ -270,16 +226,52 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                 ),
                 SizedBox(height: 16),
 
-                // Job openings list
+                // Job openings list with StreamBuilder
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: _filteredJobOpenings.length,
-                    itemBuilder: (context, index) {
-                      final job = _filteredJobOpenings[index];
-                      return AnimatedOpacity(
-                        opacity: 1.0,
-                        duration: Duration(milliseconds: 300),
-                        child: _buildJobTile(job),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _jobsStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error loading jobs',
+                            style: GoogleFonts.poppins(color: Colors.red),
+                          ),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'No job listings found',
+                            style: GoogleFonts.poppins(color: Colors.grey),
+                          ),
+                        );
+                      }
+
+                      // Map Firestore documents to job list
+                      _jobOpenings.clear();
+                      snapshot.data!.docs.forEach((doc) {
+                        Map<String, dynamic> job =
+                            doc.data() as Map<String, dynamic>;
+                        job['id'] = doc.id; // Add document ID
+                        _jobOpenings.add(job);
+                      });
+
+                      return ListView.builder(
+                        itemCount: _filteredJobOpenings.length,
+                        itemBuilder: (context, index) {
+                          final job = _filteredJobOpenings[index];
+                          return AnimatedOpacity(
+                            opacity: 1.0,
+                            duration: Duration(milliseconds: 300),
+                            child: _buildJobTile(job),
+                          );
+                        },
                       );
                     },
                   ),
@@ -298,7 +290,17 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
   }
 
   Widget _buildJobTile(Map<String, dynamic> job) {
-    String jobId = job['id'];
+    // Add null checks and default values for all fields
+    final String jobId = job['id'] ?? 'Unknown ID';
+    final String title = job['jobTitle'] ?? 'Untitled Job';
+    final String company = job['company'] ?? 'No Company';
+    final String location = job['location'] ?? 'Unknown Location';
+    final String salary = job['salary'] ?? 'Not Disclosed';
+    final String experienceLevel = job['experienceLevel'] ?? 'Not Specified';
+    final String employmentType = job['employmentType'] ?? 'Not Specified';
+    final String description =
+        job['jobDescription'] ?? 'No Description Available';
+    final List<dynamic> skills = job['requiredSkills'] ?? [];
 
     return Card(
       color: Colors.grey[850],
@@ -306,7 +308,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
       margin: EdgeInsets.symmetric(vertical: 8),
       child: ExpansionTile(
         title: Text(
-          job['title'],
+          title,
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -314,7 +316,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
           ),
         ),
         subtitle: Text(
-          job['company'],
+          company,
           style: GoogleFonts.poppins(color: Colors.white70),
         ),
         children: [
@@ -323,10 +325,10 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailRow('Location', job['location']),
-                _buildDetailRow('Salary', job['salary']),
-                _buildDetailRow('Experience Level', job['experienceLevel']),
-                _buildDetailRow('Employment Type', job['employmentType']),
+                _buildDetailRow('Location', location),
+                _buildDetailRow('Salary', salary),
+                _buildDetailRow('Experience Level', experienceLevel),
+                _buildDetailRow('Employment Type', employmentType),
                 SizedBox(height: 12),
                 Text(
                   'Job Description:',
@@ -337,7 +339,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  job['description'],
+                  description,
                   style: GoogleFonts.poppins(color: Colors.white70),
                 ),
                 SizedBox(height: 12),
@@ -352,7 +354,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children:
-                      (job['skills'] as List<dynamic>).map((skill) {
+                      skills.map((skill) {
                         return Chip(
                           label: Text(
                             skill.toString(),
