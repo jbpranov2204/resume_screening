@@ -224,28 +224,81 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.black.withOpacity(0.7),
         elevation: 0,
+        
+        centerTitle: false,
         title: Text(
-          _jobDocumentId != null ? 'Edit Job' : 'Post New Job',
+          _jobDocumentId != null
+              ? 'Edit Job Posting'
+              : 'Create New Job Posting',
           style: GoogleFonts.poppins(
             color: Colors.white,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Icon(
+              Icons.business_center_outlined,
+              color: Colors.white70,
+              size: 22,
+            ),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bg3.jpg'),
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.75),
+              BlendMode.darken,
+            ),
+          ),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 900),
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.75),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.grey.shade800.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    spreadRadius: 5,
+                  )
+                ],
+              ),
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.blue,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : _buildJobDetailsTab(),
+            ),
           ),
         ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _buildJobDetailsTab(), // Remove TabBarView
     );
   }
 
   Widget _buildJobDetailsTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
       child: Form(
         key: _formKey,
         child: Column(
@@ -262,59 +315,71 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
             const SizedBox(height: 24),
 
             // Job Title Field
-            _buildTextField(
-              label: 'Job Title',
-              hint: 'e.g., Senior Flutter Developer',
-              initialValue: _jobTitle,
-              onSaved: (value) => _jobTitle = value ?? '',
-              validator: (value) => value!.isEmpty ? 'Required' : null,
+            _buildHoverableContainer(
+              child: _buildTextField(
+                label: 'Job Title',
+                hint: 'e.g., Senior Flutter Developer',
+                initialValue: _jobTitle,
+                onSaved: (value) => _jobTitle = value ?? '',
+                validator: (value) => value!.isEmpty ? 'Required' : null,
+              ),
             ),
             const SizedBox(height: 16),
 
             // Company Field
-            _buildTextField(
-              label: 'Company',
-              hint: 'e.g., Tech Solutions Inc.',
-              initialValue: _company,
-              onSaved: (value) => _company = value ?? '',
-              validator: (value) => value!.isEmpty ? 'Required' : null,
+            _buildHoverableContainer(
+              child: _buildTextField(
+                label: 'Company',
+                hint: 'e.g., Tech Solutions Inc.',
+                initialValue: _company,
+                onSaved: (value) => _company = value ?? '',
+                validator: (value) => value!.isEmpty ? 'Required' : null,
+              ),
             ),
             const SizedBox(height: 16),
 
             // Location Field
-            _buildTextField(
-              label: 'Location',
-              hint: 'e.g., New York, NY (or Remote)',
-              initialValue: _location,
-              onSaved: (value) => _location = value ?? '',
-              validator: (value) => value!.isEmpty ? 'Required' : null,
+            _buildHoverableContainer(
+              child: _buildTextField(
+                label: 'Location',
+                hint: 'e.g., New York, NY (or Remote)',
+                initialValue: _location,
+                onSaved: (value) => _location = value ?? '',
+                validator: (value) => value!.isEmpty ? 'Required' : null,
+              ),
             ),
             const SizedBox(height: 16),
 
             // Salary Field
-            _buildTextField(
-              label: 'Salary Range (Optional)',
-              hint: 'e.g., 80,000 - 100,000',
-              initialValue: _salary,
-              onSaved: (value) => _salary = value ?? '',
+            _buildHoverableContainer(
+              child: _buildTextField(
+                label: 'Salary Range (Optional)',
+                hint: 'e.g., 80,000 - 100,000',
+                initialValue: _salary,
+                onSaved: (value) => _salary = value ?? '',
+              ),
             ),
             const SizedBox(height: 16),
 
             // Experience Level Dropdown
-            _buildDropdownField(
-              label: 'Experience Level',
-              value: _experienceLevel,
-              items: _experienceLevels,
-              onChanged: (value) => setState(() => _experienceLevel = value!),
+            _buildHoverableContainer(
+              child: _buildDropdownField(
+                label: 'Experience Level',
+                value: _experienceLevel,
+                items: _experienceLevels,
+                onChanged: (value) => setState(() => _experienceLevel = value!),
+              ),
             ),
             const SizedBox(height: 16),
 
             // Employment Type Dropdown
-            _buildDropdownField(
-              label: 'Employment Type',
-              value: _employmentType,
-              items: _employmentTypes,
-              onChanged: (value) => setState(() => _employmentType = value!),
+            _buildHoverableContainer(
+              child: _buildDropdownField(
+                label: 'Employment Type',
+                value: _employmentType,
+                items: _employmentTypes,
+                onChanged: (value) => setState(() => _employmentType = value!),
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -424,7 +489,7 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          childAspectRatio: 2.5,
+                          childAspectRatio: 3,
                           crossAxisSpacing: 8,
                           mainAxisSpacing: 8,
                         ),
@@ -481,34 +546,37 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
 
             // Post Job Button
             Center(
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _saveJobToFirestore,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 5,
-                  shadowColor: Colors.blue.withOpacity(0.5),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.publish),
-                    const SizedBox(width: 12),
-                    Text(
-                      _jobDocumentId != null ? 'Update Job' : 'Post Job',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+              child: _buildHoverableContainer(
+                borderRadius: BorderRadius.circular(30),
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveJobToFirestore,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
                     ),
-                  ],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 5,
+                    shadowColor: Colors.blue.withOpacity(0.5),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.publish),
+                      const SizedBox(width: 12),
+                      Text(
+                        _jobDocumentId != null ? 'Update Job' : 'Post Job',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -543,17 +611,31 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
             color: Colors.grey.shade900,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade800),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: TextFormField(
             initialValue: initialValue,
             style: GoogleFonts.poppins(color: Colors.white),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.poppins(color: Colors.grey),
+              hintStyle: GoogleFonts.poppins(
+                color: Colors.grey.shade600,
+                fontSize: 14,
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: 12,
+                vertical: 16,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.blue.withOpacity(0.7), width: 1),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             validator: validator,
@@ -587,27 +669,57 @@ class _JobDescriptionPageState extends State<JobDescriptionPage>
             color: Colors.grey.shade900,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade800),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
               dropdownColor: Colors.grey.shade900,
               style: GoogleFonts.poppins(color: Colors.white),
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-              items:
-                  items.map((String item) {
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item),
-                    );
-                  }).toList(),
+              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.blue),
+              items: items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item),
+                );
+              }).toList(),
               onChanged: onChanged,
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHoverableContainer({
+    required Widget child,
+    BorderRadius borderRadius = BorderRadius.zero,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.05),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: child,
+      ),
     );
   }
 }

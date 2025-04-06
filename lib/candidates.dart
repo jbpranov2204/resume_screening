@@ -10,6 +10,7 @@ class CandidatesPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.black,
         elevation: 0,
         title: Text(
@@ -50,22 +51,27 @@ class CandidatesPage extends StatelessWidget {
             return ListView.builder(
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
-                Map<String, dynamic> candidate =
-                    snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                var docData = snapshot.data!.docs[index].data();
+                Map<String, dynamic> candidate = docData is Map ? Map<String, dynamic>.from(docData) : {};
 
-                // Extract candidate details with null checks
-                final String name =
-                    candidate['analysisResult']['name'] ?? 'Unknown';
-                final String email =
-                    candidate['analysisResult']['experience'] ?? 'No Email';
-                final String skills =
-                    candidate['analysisResult']['skills']?.join(', ') ?? 'N/A';
-                final double score =
-                    candidate['analysisResult']['score']?.toDouble() ?? 0.0;
-                final String status =
-                    score > 50
-                        ? 'Selected'
-                        : (score == 50 ? 'Pending' : 'Not Selected');
+                // Safely extract nested data
+                final analysisResult = candidate['analysisResult'] is Map 
+                    ? Map<String, dynamic>.from(candidate['analysisResult']) 
+                    : <String, dynamic>{};
+
+                final String name = analysisResult['name']?.toString() ?? 'Unknown';
+                
+                final String experience = analysisResult['experience']?.toString() ?? 'No Experience';
+                final dynamic skillsData = analysisResult['skills'];
+                final String skills = skillsData is List 
+                    ? skillsData.map((e) => e?.toString()).join(', ') 
+                    : skillsData?.toString() ?? 'N/A';
+                final double score = analysisResult['score'] is num 
+                    ? analysisResult['score'].toDouble() 
+                    : 0.0;
+                final String status = score > 50
+                    ? 'Selected'
+                    : (score == 50 ? 'Pending' : 'Not Selected');
                 final bool isShortlisted = status == 'Selected';
 
                 return Card(
@@ -96,18 +102,16 @@ class CandidatesPage extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    isShortlisted
-                                        ? Colors.green.withOpacity(0.2)
-                                        : Colors.red.withOpacity(0.2),
+                                color: isShortlisted
+                                    ? Colors.green.withOpacity(0.2)
+                                    : Colors.red.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 status,
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
-                                  color:
-                                      isShortlisted ? Colors.green : Colors.red,
+                                  color: isShortlisted ? Colors.green : Colors.red,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -115,8 +119,10 @@ class CandidatesPage extends StatelessWidget {
                           ],
                         ),
                         SizedBox(height: 8),
+                        
+                        
                         Text(
-                          email,
+                          'Experience: $experience',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: Colors.grey,

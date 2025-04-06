@@ -12,7 +12,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage>
     with SingleTickerProviderStateMixin {
-  final String _username = "John Doe";
+  final String _username = "Yuva Krishna";
   late AnimationController _animationController;
 
   // Firestore instance
@@ -61,10 +61,10 @@ class _DashboardPageState extends State<DashboardPage>
                 CircleAvatar(
                   radius: 40,
                   backgroundImage: NetworkImage(
-                    'https://randomuser.me/api/portraits/men/1.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/6/66/Sachin-Tendulkar.jpg',
                   ),
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 20),
                 Text(
                   _username,
                   style: GoogleFonts.poppins(
@@ -74,7 +74,7 @@ class _DashboardPageState extends State<DashboardPage>
                   ),
                 ),
                 Text(
-                  'john.doe@example.com',
+                  'yuvabroo@gmail.com',
                   style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
                 ),
                 SizedBox(height: 24),
@@ -141,255 +141,290 @@ class _DashboardPageState extends State<DashboardPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        title: Text(
-          'Dashboard',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+      body: Stack(
+        children: [
+          // Background image
+          Positioned.fill(
+            child: Image.asset('assets/bg7.jpg', fit: BoxFit.cover),
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {},
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: _showProfileMenu,
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: NetworkImage(
-                  'https://randomuser.me/api/portraits/men/1.jpg',
-                ),
+          // Main content
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AppBar(
+                    automaticallyImplyLeading: false,
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    title: Text(
+                      'Dashboard',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    actions: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.notifications_outlined,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {},
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 16),
+                        child: GestureDetector(
+                          onTap: _showProfileMenu,
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundImage: NetworkImage(
+                              'https://upload.wikimedia.org/wikipedia/commons/6/66/Sachin-Tendulkar.jpg',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Welcome message
+                  RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        color: Colors.white,
+                      ),
+                      children: [
+                        TextSpan(text: 'Welcome back, '),
+                        TextSpan(
+                          text: _username,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Manage your job listings and review applicants',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 32),
+
+                  // Stats overview
+                  Row(
+                    children: [
+                      _buildStatCard('Active Jobs', '2', Icons.work_outline),
+                      SizedBox(width: 16),
+                      _buildStatCard(
+                        'Total Applicants',
+                        '74',
+                        Icons.people_outline,
+                      ),
+                      SizedBox(width: 16),
+                      _buildStatCard(
+                        'Pending Review',
+                        '12',
+                        Icons.pending_outlined,
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 32),
+
+                  // Job History section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Recent Job Listings',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // View all jobs
+                        },
+                        child: Text(
+                          'View All',
+                          style: GoogleFonts.poppins(color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+
+                  // Job history list with StreamBuilder
+                  StreamBuilder<QuerySnapshot>(
+                    stream: _jobsStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Error loading jobs',
+                            style: GoogleFonts.poppins(color: Colors.red),
+                          ),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'No job listings found',
+                            style: GoogleFonts.poppins(color: Colors.grey),
+                          ),
+                        );
+                      }
+
+                      // Display job listings
+                      return Column(
+                        children:
+                            snapshot.data!.docs.map((
+                              DocumentSnapshot document,
+                            ) {
+                              Map<String, dynamic> job =
+                                  document.data() as Map<String, dynamic>;
+                              // Add the document ID to the job map
+                              job['id'] = document.id;
+                              return _buildJobHistoryCard(job);
+                            }).toList(),
+                      );
+                    },
+                  ),
+
+                  SizedBox(height: 40),
+
+                  // Add new job and candidates buttons
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _navigateToJobUpload,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.blue,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            elevation: 5,
+                            shadowColor: Colors.blue.withOpacity(0.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_circle_outline),
+                              SizedBox(width: 12),
+                              Text(
+                                'Post New Job',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CandidatesPage(),
+                              ),
+                            );
+                            // Navigate to candidates page
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.green,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            elevation: 5,
+                            shadowColor: Colors.green.withOpacity(0.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.people_outline),
+                              SizedBox(width: 12),
+                              Text(
+                                'Candidates',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                ],
               ),
             ),
           ),
         ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome message
-            RichText(
-              text: TextSpan(
-                style: GoogleFonts.poppins(fontSize: 24, color: Colors.white),
-                children: [
-                  TextSpan(text: 'Welcome back, '),
-                  TextSpan(
-                    text: _username,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Manage your job listings and review applicants',
-              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
-            ),
-            SizedBox(height: 32),
-
-            // Stats overview
-            Row(
-              children: [
-                _buildStatCard('Active Jobs', '2', Icons.work_outline),
-                SizedBox(width: 16),
-                _buildStatCard('Total Applicants', '74', Icons.people_outline),
-                SizedBox(width: 16),
-                _buildStatCard('Pending Review', '12', Icons.pending_outlined),
-              ],
-            ),
-
-            SizedBox(height: 32),
-
-            // Job History section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Recent Job Listings',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // View all jobs
-                  },
-                  child: Text(
-                    'View All',
-                    style: GoogleFonts.poppins(color: Colors.blue),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-
-            // Job history list with StreamBuilder
-            StreamBuilder<QuerySnapshot>(
-              stream: _jobsStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      'Error loading jobs',
-                      style: GoogleFonts.poppins(color: Colors.red),
-                    ),
-                  );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No job listings found',
-                      style: GoogleFonts.poppins(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                // Display job listings
-                return Column(
-                  children:
-                      snapshot.data!.docs.map((DocumentSnapshot document) {
-                        Map<String, dynamic> job =
-                            document.data() as Map<String, dynamic>;
-                        // Add the document ID to the job map
-                        job['id'] = document.id;
-                        return _buildJobHistoryCard(job);
-                      }).toList(),
-                );
-              },
-            ),
-
-            SizedBox(height: 40),
-
-            // Add new job and candidates buttons
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: _navigateToJobUpload,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 5,
-                      shadowColor: Colors.blue.withOpacity(0.5),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add_circle_outline),
-                        SizedBox(width: 12),
-                        Text(
-                          'Post New Job',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CandidatesPage(),
-                        ),
-                      );
-                      // Navigate to candidates page
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      elevation: 5,
-                      shadowColor: Colors.green.withOpacity(0.5),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.people_outline),
-                        SizedBox(width: 12),
-                        Text(
-                          'Candidates',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 40),
-          ],
-        ),
       ),
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon) {
     return Expanded(
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade900,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade800),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.blue, size: 24),
-            SizedBox(height: 12),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      child: HoverContainer(
+        borderRadius: BorderRadius.circular(16),
+        hoverBorderColor: Colors.blue,
+        defaultBorderColor: Colors.grey.shade800,
+        child: Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade900,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: Colors.blue, size: 24),
+              SizedBox(height: 12),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              title,
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+              SizedBox(height: 4),
+              Text(
+                title,
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -411,102 +446,151 @@ class _DashboardPageState extends State<DashboardPage>
 
     final bool isActive = status == 'Active';
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade800),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Navigate to job details with document ID
-            // You can use job['id'] to get the document ID
-          },
+    return HoverContainer(
+      borderRadius: BorderRadius.circular(16),
+      hoverBorderColor: Colors.blue,
+      defaultBorderColor: Colors.grey.shade800,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade900,
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isActive
-                                ? Colors.green.withOpacity(0.2)
-                                : Colors.red.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: isActive ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.w500,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              // Navigate to job details with document ID
+              // You can use job['id'] to get the document ID
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Text(
-                  company,
-                  style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey),
-                ),
-                SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 16,
-                          color: Colors.grey,
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                        SizedBox(width: 4),
-                        Text(
-                          '$applicants applicants',
+                        decoration: BoxDecoration(
+                          color:
+                              isActive
+                                  ? Colors.green.withOpacity(0.2)
+                                  : Colors.red.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          status,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: isActive ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
-                    ),
-                    Text(
-                      'Posted: $date', // Display formatted date
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey,
                       ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    company,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '$applicants applicants',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Posted: $date', // Display formatted date
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class HoverContainer extends StatefulWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+  final Color hoverBorderColor;
+  final Color defaultBorderColor;
+
+  const HoverContainer({
+    required this.child,
+    this.borderRadius = BorderRadius.zero,
+    this.hoverBorderColor = Colors.blue,
+    this.defaultBorderColor = Colors.grey,
+  });
+
+  @override
+  _HoverContainerState createState() => _HoverContainerState();
+}
+
+class _HoverContainerState extends State<HoverContainer> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          borderRadius: widget.borderRadius,
+          border: Border.all(
+            color:
+                _isHovered
+                    ? widget.hoverBorderColor
+                    : widget.defaultBorderColor,
+          ),
+        ),
+        child: widget.child,
       ),
     );
   }

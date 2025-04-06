@@ -159,6 +159,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Job Openings',
           style: GoogleFonts.poppins(
