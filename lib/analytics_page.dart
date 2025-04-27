@@ -49,31 +49,67 @@ class AnalyticsPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 20),
-                // Analytics Cards
+                // Analytics Cards - Responsive layout
                 Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.3,
-                    children: [
-                      _buildAnalyticsCard(
-                        title: 'Applications by Source',
-                        child: _buildPieChart(),
-                      ),
-                      _buildAnalyticsCard(
-                        title: 'Jobs by Department',
-                        child: _buildBarChart(),
-                      ),
-                      _buildAnalyticsCard(
-                        title: 'Hiring Trends',
-                        child: _buildLineChart(),
-                      ),
-                      _buildAnalyticsCard(
-                        title: 'Summary',
-                        child: _buildSummaryCard(),
-                      ),
-                    ],
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Use a single column layout for mobile screens
+                      if (constraints.maxWidth < 600) {
+                        return ListView(
+                          children: [
+                            _buildAnalyticsCard(
+                              title: 'Applications by Source',
+                              child: _buildPieChart(),
+                              height: 220,
+                            ),
+                            SizedBox(height: 16),
+                            _buildAnalyticsCard(
+                              title: 'Jobs by Department',
+                              child: _buildBarChart(),
+                              height: 220,
+                            ),
+                            SizedBox(height: 16),
+                            _buildAnalyticsCard(
+                              title: 'Hiring Trends',
+                              child: _buildLineChart(),
+                              height: 220,
+                            ),
+                            SizedBox(height: 16),
+                            _buildAnalyticsCard(
+                              title: 'Summary',
+                              child: _buildSummaryCard(),
+                              height: 220,
+                            ),
+                          ],
+                        );
+                      } else {
+                        // Original grid layout for tablets and desktop
+                        return GridView.count(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 1.3,
+                          children: [
+                            _buildAnalyticsCard(
+                              title: 'Applications by Source',
+                              child: _buildPieChart(),
+                            ),
+                            _buildAnalyticsCard(
+                              title: 'Jobs by Department',
+                              child: _buildBarChart(),
+                            ),
+                            _buildAnalyticsCard(
+                              title: 'Hiring Trends',
+                              child: _buildLineChart(),
+                            ),
+                            _buildAnalyticsCard(
+                              title: 'Summary',
+                              child: _buildSummaryCard(),
+                            ),
+                          ],
+                        );
+                      }
+                    },
                   ),
                 ),
               ],
@@ -84,9 +120,14 @@ class AnalyticsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAnalyticsCard({required String title, required Widget child}) {
+  Widget _buildAnalyticsCard({
+    required String title,
+    required Widget child,
+    double? height,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
+      height: height,
       decoration: BoxDecoration(
         color: Colors.grey.shade900.withOpacity(0.8),
         borderRadius: BorderRadius.circular(16),
@@ -238,10 +279,7 @@ class AnalyticsPage extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: 2,
           getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: Colors.white10,
-              strokeWidth: 1,
-            );
+            return FlLine(color: Colors.white10, strokeWidth: 1);
           },
         ),
         barGroups: [
@@ -253,7 +291,7 @@ class AnalyticsPage extends StatelessWidget {
                 color: Colors.blue,
                 width: 15,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-              )
+              ),
             ],
           ),
           BarChartGroupData(
@@ -264,7 +302,7 @@ class AnalyticsPage extends StatelessWidget {
                 color: Colors.orange,
                 width: 15,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-              )
+              ),
             ],
           ),
           BarChartGroupData(
@@ -275,7 +313,7 @@ class AnalyticsPage extends StatelessWidget {
                 color: Colors.green,
                 width: 15,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-              )
+              ),
             ],
           ),
         ],
@@ -291,10 +329,7 @@ class AnalyticsPage extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: 2,
           getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: Colors.white10,
-              strokeWidth: 1,
-            );
+            return FlLine(color: Colors.white10, strokeWidth: 1);
           },
         ),
         titlesData: FlTitlesData(
@@ -341,12 +376,7 @@ class AnalyticsPage extends StatelessWidget {
         maxY: 10,
         lineBarsData: [
           LineChartBarData(
-            spots: [
-              FlSpot(0, 3),
-              FlSpot(1, 5),
-              FlSpot(2, 2),
-              FlSpot(3, 8),
-            ],
+            spots: [FlSpot(0, 3), FlSpot(1, 5), FlSpot(2, 2), FlSpot(3, 8)],
             isCurved: true,
             color: Colors.blue,
             barWidth: 3,
