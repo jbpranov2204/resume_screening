@@ -27,6 +27,7 @@ class _DashboardPageState extends State<DashboardPage>
   bool get _isLargeScreen => _getScreenWidth(context) > 1200;
   bool get _isMediumScreen =>
       _getScreenWidth(context) > 800 && _getScreenWidth(context) <= 1200;
+  bool get _isMobileScreen => _getScreenWidth(context) <= 800;
 
   @override
   void initState() {
@@ -135,32 +136,126 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
+  // New method to build different content based on selected index for web view
+  Widget _buildWebContent(double screenWidth) {
+    // Default dashboard content
+    if (_selectedIndex == 0) {
+      return Column(
+        children: [
+          // Top AppBar
+          _buildWebAppBar(screenWidth),
+
+          // Content Area with scrolling
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome message
+                  _buildWelcomeHeader(),
+
+                  SizedBox(height: 32),
+
+                  // Stats overview with responsive grid
+                  _buildStatsGrid(screenWidth),
+
+                  SizedBox(height: 32),
+
+                  // Job Listings section
+                  _buildJobListingsHeader(),
+
+                  SizedBox(height: 16),
+
+                  // Job listing cards
+                  _buildJobListings(),
+
+                  SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    // Job page content
+    else if (_selectedIndex == 1) {
+      return JobDescriptionPage();
+    }
+    // Candidates page content
+    else if (_selectedIndex == 2) {
+      return CandidatesPage();
+    }
+    // Analytics page content
+    else if (_selectedIndex == 3) {
+      return AnalyticsPage();
+    }
+    // Settings page content
+    else if (_selectedIndex == 4) {
+      return SettingsPage();
+    }
+    // Default fallback
+    else {
+      return Center(
+        child: Text(
+          'Page not found',
+          style: GoogleFonts.poppins(color: Colors.white, fontSize: 20),
+        ),
+      );
+    }
+  }
+
+  // Modified navigation methods for web view
   void _navigateToJobUpload() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => JobDescriptionPage()),
-    );
+    if (_isMobileScreen) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => JobDescriptionPage()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = 1;
+      });
+    }
   }
 
   void _navigateToCandidates() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CandidatesPage()),
-    );
+    if (_isMobileScreen) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => CandidatesPage()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = 2;
+      });
+    }
   }
 
   void _navigateToAnalytics() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => AnalyticsPage()),
-    );
+    if (_isMobileScreen) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AnalyticsPage()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = 3;
+      });
+    }
   }
 
   void _navigateToSettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => SettingsPage()),
-    );
+    if (_isMobileScreen) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SettingsPage()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = 4;
+      });
+    }
   }
 
   @override
@@ -176,74 +271,560 @@ class _DashboardPageState extends State<DashboardPage>
             child: Image.asset('assets/bg7.jpg', fit: BoxFit.cover),
           ),
 
-          // Main content as Row for web layout
+          // Choose between mobile and web layout
           Positioned.fill(
-            child: Row(
-              children: [
-                // Sidebar/Navigation
-                if (_isLargeScreen || (_isMediumScreen && _isDrawerOpen))
-                  _buildWebSidebar(),
-
-                // Main content area
-                Expanded(
-                  child: Container(
-                    color: Colors.black.withOpacity(
-                      0.6,
-                    ), // Semi-transparent overlay
-                    child: Column(
+            child:
+                _isMobileScreen
+                    ? _buildMobileLayout()
+                    : Row(
                       children: [
-                        // Top AppBar
-                        _buildWebAppBar(screenWidth),
+                        // Sidebar/Navigation
+                        if (_isLargeScreen ||
+                            (_isMediumScreen && _isDrawerOpen))
+                          _buildWebSidebar(),
 
-                        // Content Area with scrolling
+                        // Main content area - now using _buildWebContent to show the right content
                         Expanded(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Welcome message
-                                _buildWelcomeHeader(),
+                          child: Container(
+                            color: Colors.black.withOpacity(0.6),
+                            child: _buildWebContent(screenWidth),
+                          ),
+                        ),
+                      ],
+                    ),
+          ),
+        ],
+      ),
+      drawer: _isMobileScreen ? _buildMobileDrawer() : null,
+    );
+  }
 
-                                SizedBox(height: 32),
+  // Mobile layout implementation
+  Widget _buildMobileLayout() {
+    return SafeArea(
+      child: Container(
+        color: Colors.black.withOpacity(0.7),
+        child: Column(
+          children: [
+            // Mobile app bar
+            _buildMobileAppBar(),
 
-                                // Stats overview with responsive grid
-                                _buildStatsGrid(screenWidth),
+            // Main content with scrolling
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mobile welcome card
+                    _buildMobileWelcomeCard(),
 
-                                SizedBox(height: 32),
+                    SizedBox(height: 24),
 
-                                // Job Listings section
-                                _buildJobListingsHeader(),
+                    // Mobile stats cards (horizontally scrollable)
+                    _buildMobileStatsCards(),
 
-                                SizedBox(height: 16),
+                    SizedBox(height: 24),
 
-                                // Job listing cards
-                                _buildJobListings(),
+                    // Recent jobs header
+                    _buildMobileSectionHeader(
+                      'Recent Job Listings',
+                      'View All',
+                      () {
+                        /* Navigate to all jobs */
+                      },
+                    ),
 
-                                SizedBox(height: 40),
-                              ],
-                            ),
+                    SizedBox(height: 12),
+
+                    // Job listings
+                    _buildMobileJobListings(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileAppBar() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.8),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade800, width: 0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Builder(
+            builder:
+                (context) => IconButton(
+                  icon: Icon(Icons.menu, color: Colors.white),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                ),
+          ),
+          Text(
+            'ResumeScreen',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.search, color: Colors.white),
+                onPressed: () {
+                  // Show search dialog
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.notifications_outlined, color: Colors.white),
+                onPressed: () {
+                  // Show notifications
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileWelcomeCard() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.blue.shade900, Colors.blue.shade700],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade900.withOpacity(0.3),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundImage: NetworkImage(
+                  'https://upload.wikimedia.org/wikipedia/commons/6/66/Sachin-Tendulkar.jpg',
+                ),
+              ),
+              SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hello, $_username',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    DateFormat('EEEE, MMM d').format(DateTime.now()),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.blue.shade100,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Text(
+            'You have 12 candidates waiting for review',
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _navigateToCandidates,
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.blue.shade900,
+              backgroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Review Candidates',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileStatsCards() {
+    return Container(
+      height: 120,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _buildMobileStatCard(
+            'Active Jobs',
+            '2',
+            Icons.work_outline,
+            Colors.blue,
+          ),
+          _buildMobileStatCard(
+            'Applicants',
+            '74',
+            Icons.people_outline,
+            Colors.orange,
+          ),
+          _buildMobileStatCard(
+            'Pending',
+            '12',
+            Icons.pending_outlined,
+            Colors.purple,
+          ),
+          _buildMobileStatCard(
+            'Interviews',
+            '8',
+            Icons.calendar_today,
+            Colors.green,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      width: 140,
+      margin: EdgeInsets.only(right: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade800),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileSectionHeader(
+    String title,
+    String actionText,
+    VoidCallback onAction,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        TextButton(
+          onPressed: onAction,
+          child: Text(
+            actionText,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.blue,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileJobListings() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _jobsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return _buildMobileErrorCard('Error loading jobs');
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _buildMobileEmptyCard('No job listings found');
+        }
+
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemBuilder: (context, index) {
+            Map<String, dynamic> job =
+                snapshot.data!.docs[index].data() as Map<String, dynamic>;
+            job['id'] = snapshot.data!.docs[index].id;
+            return _buildMobileJobCard(job);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildMobileErrorCard(String message) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      margin: EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.red.shade900.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.shade800),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 32),
+          SizedBox(height: 10),
+          Text(
+            message,
+            style: GoogleFonts.poppins(color: Colors.red.shade100),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileEmptyCard(String message) {
+    return Container(
+      padding: EdgeInsets.all(30),
+      margin: EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade800),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.work_off_outlined, color: Colors.grey, size: 32),
+          SizedBox(height: 12),
+          Text(
+            message,
+            style: GoogleFonts.poppins(color: Colors.grey.shade400),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 16),
+          ElevatedButton.icon(
+            icon: Icon(Icons.add, size: 18),
+            label: Text('Create Job'),
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.blue,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onPressed: _navigateToJobUpload,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileJobCard(Map<String, dynamic> job) {
+    final String title = job['jobTitle'] ?? 'Untitled Job';
+    final String status = job['employmentType'] ?? 'Unknown';
+    final String company = job['company'] ?? 'No Company';
+    final int applicants = job['applicants'] ?? 0;
+    final Timestamp? timestamp = job['postedAt'];
+    final String date =
+        timestamp != null
+            ? DateFormat('MMM dd').format(timestamp.toDate())
+            : 'No date';
+    final bool isActive = status == 'Active';
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 12),
+      color: Colors.grey.shade900,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade800),
+      ),
+      child: InkWell(
+        onTap: () {
+          // Navigate to job details
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.work_outline,
+                      color: Colors.blue,
+                      size: 18,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          company,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: Colors.grey.shade400,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color:
+                          isActive
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.orange.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      status,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: isActive ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    '$applicants applicants',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                  Spacer(),
+                  Text(
+                    date,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      // View details
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'View Details',
+                      style: GoogleFonts.poppins(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      // Only show FAB on smaller screens
-      floatingActionButton:
-          !_isLargeScreen && !_isMediumScreen
-              ? FloatingActionButton(
-                backgroundColor: Colors.blue,
-                child: Icon(Icons.add),
-                onPressed: _navigateToJobUpload,
-              )
-              : null,
-      drawer: !_isLargeScreen && !_isMediumScreen ? _buildMobileDrawer() : null,
     );
   }
 
@@ -404,6 +985,7 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
+  // Fixed mobile drawer to properly handle analytics navigation
   Widget _buildMobileDrawer() {
     return Drawer(
       child: Container(
@@ -441,24 +1023,84 @@ class _DashboardPageState extends State<DashboardPage>
                 ],
               ),
             ),
-            _buildNavItem(0, Icons.dashboard, 'Dashboard'),
-            _buildNavItem(
+            _buildDrawerItem(
+              0,
+              Icons.dashboard,
+              'Dashboard',
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                setState(() => _selectedIndex = 0);
+              },
+            ),
+            _buildDrawerItem(
               1,
               Icons.work_outline,
               'Jobs',
-              onTap: _navigateToJobUpload,
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                _navigateToJobUpload();
+              },
             ),
-            _buildNavItem(
+            _buildDrawerItem(
               2,
               Icons.people_outline,
               'Candidates',
-              onTap: _navigateToCandidates,
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                _navigateToCandidates();
+              },
             ),
-            _buildNavItem(3, Icons.analytics_outlined, 'Analytics'),
-            _buildNavItem(4, Icons.settings_outlined, 'Settings'),
+            _buildDrawerItem(
+              3,
+              Icons.analytics_outlined,
+              'Analytics',
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                _navigateToAnalytics();
+              },
+            ),
+            _buildDrawerItem(
+              4,
+              Icons.settings_outlined,
+              'Settings',
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                _navigateToSettings();
+              },
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  // New method specifically for drawer items
+  Widget _buildDrawerItem(
+    int index,
+    IconData icon,
+    String label, {
+    required VoidCallback onTap,
+  }) {
+    final isSelected = index == _selectedIndex;
+
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isSelected ? Colors.blue : Colors.grey.shade400,
+        size: 22,
+      ),
+      title: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          color: isSelected ? Colors.white : Colors.grey.shade400,
+        ),
+      ),
+      selected: isSelected,
+      selectedTileColor: Colors.blue.withOpacity(0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      onTap: onTap,
     );
   }
 

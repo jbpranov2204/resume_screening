@@ -210,8 +210,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 1100;
     final isTablet =
-        MediaQuery.of(context).size.width > 800 &&
+        MediaQuery.of(context).size.width > 600 &&
         MediaQuery.of(context).size.width <= 1100;
+    final isMobile = MediaQuery.of(context).size.width <= 600;
 
     return Scaffold(
       backgroundColor: Color.fromARGB(255, 0, 0, 0), // Dark blue background
@@ -229,7 +230,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
               style: GoogleFonts.montserrat(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: 24,
+                fontSize: isMobile ? 18 : 24,
               ),
             ),
           ],
@@ -242,10 +243,33 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         ), // Darker blue for AppBar
         elevation: 0,
         actions: [
-          // Removed Notifications, Messages, Profile, and Menu icon
+          // For mobile, add a menu icon
+          if (isMobile)
+            IconButton(
+              icon: Icon(Icons.menu, color: Colors.white),
+              onPressed: () {
+                // Show drawer or bottom sheet with options
+                _showMobileMenu(context);
+              },
+            ),
+          // For tablets and desktops, show these icons
+          if (!isMobile) ...[
+            IconButton(
+              icon: Icon(Icons.notifications_outlined, color: Colors.white),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: Icon(Icons.message_outlined, color: Colors.white),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: Icon(Icons.account_circle_outlined, color: Colors.white),
+              onPressed: () {},
+            ),
+          ],
         ],
       ),
-      endDrawer: null, // Removed endDrawer
+      drawer: isMobile ? _buildDrawer() : null,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Stack(
@@ -256,129 +280,146 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color.fromARGB(255, 5, 13, 23),
                     Color.fromARGB(255, 0, 0, 0),
+                    Color.fromARGB(255, 10, 20, 30),
                   ], // Dark blue to medium blue gradient
                 ),
               ),
               child: SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 64.0 : (isTablet ? 32.0 : 16.0),
                     vertical: 24.0,
+                    horizontal: isMobile ? 16.0 : 24.0,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header section with welcome message
+                      // Header section
                       _buildHeaderSection(isDesktop),
-                      SizedBox(height: 32),
+                      SizedBox(height: 24),
 
                       // Search and filter section
                       _buildSearchAndFilterSection(isDesktop, isTablet),
                       SizedBox(height: 24),
 
-                      // Toggle view buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Available Positions',
-                            style: GoogleFonts.montserrat(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                      // Toggle view buttons for list and grid
+                      if (!isMobile)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                Icons.grid_view_rounded,
+                                color: _isGridView ? Colors.blue : Colors.grey,
+                              ),
+                              onPressed:
+                                  () => setState(() => _isGridView = true),
                             ),
-                          ),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.grid_view,
-                                  color:
-                                      _isGridView ? Colors.blue : Colors.grey,
-                                ),
-                                onPressed:
-                                    () => setState(() => _isGridView = true),
+                            IconButton(
+                              icon: Icon(
+                                Icons.view_list_rounded,
+                                color: !_isGridView ? Colors.blue : Colors.grey,
                               ),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.view_list,
-                                  color:
-                                      !_isGridView ? Colors.blue : Colors.grey,
-                                ),
-                                onPressed:
-                                    () => setState(() => _isGridView = false),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                              onPressed:
+                                  () => setState(() => _isGridView = false),
+                            ),
+                          ],
+                        ),
+
                       SizedBox(height: 16),
 
-                      // Job listings - use fixed height container with expanded
-                      Container(
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: StreamBuilder<QuerySnapshot>(
-                          stream: _jobsStream,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.blue,
+                      // Jobs listings - use StreamBuilder to get real data
+                      StreamBuilder<QuerySnapshot>(
+                        stream: _jobsStream,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.blue,
+                              ),
+                            );
+                          }
+
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Error: ${snapshot.error}',
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.work_off,
+                                    color: Colors.grey,
+                                    size: 64,
                                   ),
-                                ),
-                              );
-                            }
-
-                            // Removed error handling UI
-                            if (!snapshot.hasData ||
-                                snapshot.data!.docs.isEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.work_off,
-                                      color: Colors.grey,
-                                      size: 64,
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No job listings found',
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                      fontSize: 18,
                                     ),
-                                    SizedBox(height: 16),
-                                    Text(
-                                      'No job listings found',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.grey,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Check back later for new opportunities',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
-                            // Map Firestore documents to job list
-                            _jobOpenings.clear();
-                            snapshot.data!.docs.forEach((doc) {
-                              Map<String, dynamic> job =
-                                  doc.data() as Map<String, dynamic>;
-                              job['id'] = doc.id; // Add document ID
-                              _jobOpenings.add(job);
-                            });
+                          // Convert snapshot to job openings format
+                          List<Map<String, dynamic>> jobs =
+                              snapshot.data!.docs.map((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                return {'id': doc.id, ...data};
+                              }).toList();
 
-                            return _isGridView
-                                ? _buildGridView(isDesktop, isTablet)
-                                : _buildListView();
-                          },
-                        ),
+                          // Decide which view to show based on device and _isGridView
+                          if (isMobile) {
+                            // Always show list view on mobile
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: jobs.length,
+                              itemBuilder: (context, index) {
+                                return _buildListJobCard(jobs[index], index);
+                              },
+                            );
+                          } else if (_isGridView) {
+                            return GridView.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: isDesktop ? 3 : 2,
+                                    childAspectRatio: isDesktop ? 1.2 : 1.1,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                  ),
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: jobs.length,
+                              itemBuilder: (context, index) {
+                                return _buildGridJobCard(jobs[index]);
+                              },
+                            );
+                          } else {
+                            return ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: jobs.length,
+                              itemBuilder: (context, index) {
+                                return _buildListJobCard(jobs[index], index);
+                              },
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -393,14 +434,15 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color(0xFFFFD700),
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                       ),
-                      SizedBox(height: 16),
+                      SizedBox(height: 20),
                       Text(
-                        'Processing your application...',
-                        style: GoogleFonts.montserrat(color: Colors.white),
+                        'Analyzing resume...',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -409,6 +451,63 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
           ],
         ),
       ),
+    );
+  }
+
+  void _showMobileMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Color.fromARGB(255, 2, 4, 7),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => Container(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                  ),
+                  title: Text(
+                    'Notifications',
+                    style: GoogleFonts.montserrat(color: Colors.white),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+                ListTile(
+                  leading: Icon(Icons.message_outlined, color: Colors.white),
+                  title: Text(
+                    'Messages',
+                    style: GoogleFonts.montserrat(color: Colors.white),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.account_circle_outlined,
+                    color: Colors.white,
+                  ),
+                  title: Text(
+                    'Profile',
+                    style: GoogleFonts.montserrat(color: Colors.white),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+                ListTile(
+                  leading: Icon(Icons.settings_outlined, color: Colors.white),
+                  title: Text(
+                    'Settings',
+                    style: GoogleFonts.montserrat(color: Colors.white),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
@@ -444,7 +543,25 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
           top: 50.0,
         ), // Added padding to top instead of header
         children: [
-          // Removed DrawerHeader widget
+          // Drawer header with logo
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Icon(Icons.work_outline, color: Color(0xFFFFD700), size: 28),
+                SizedBox(width: 12),
+                Text(
+                  'JobScope',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(color: Colors.white24),
           _buildDrawerItem('My Applications', Icons.assignment),
           _buildDrawerItem('Saved Jobs', Icons.bookmark),
           _buildDrawerItem('Notifications', Icons.notifications),
@@ -468,6 +585,8 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
   }
 
   Widget _buildHeaderSection(bool isDesktop) {
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -478,21 +597,19 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Discover Your Next Career Move',
+                    'Find Your Dream Job',
                     style: GoogleFonts.montserrat(
-                      fontSize: isDesktop ? 36 : 24,
-                      fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      height: 1.2,
+                      fontWeight: FontWeight.bold,
+                      fontSize: isMobile ? 24 : 32,
                     ),
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'Find opportunities aligned with your skills and experience',
+                    'Browse through hundreds of job listings and find the perfect match for your skills and career goals.',
                     style: GoogleFonts.montserrat(
-                      fontSize: isDesktop ? 18 : 16,
-                      color: const Color.fromARGB(255, 44, 64, 81),
-                      height: 1.4,
+                      color: Colors.grey[300],
+                      fontSize: isMobile ? 14 : 16,
                     ),
                   ),
                 ],
@@ -524,11 +641,16 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
   }
 
   Widget _buildStatChip(String label, IconData icon) {
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
     return Chip(
-      avatar: Icon(icon, color: Colors.white, size: 16),
+      avatar: Icon(icon, color: Colors.white, size: isMobile ? 14 : 16),
       label: Text(
         label,
-        style: GoogleFonts.montserrat(color: Colors.white, fontSize: 12),
+        style: GoogleFonts.montserrat(
+          color: Colors.white,
+          fontSize: isMobile ? 10 : 12,
+        ),
       ),
       backgroundColor: Color.fromARGB(
         255,
@@ -541,8 +663,10 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
   }
 
   Widget _buildSearchAndFilterSection(bool isDesktop, bool isTablet) {
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
     return Container(
-      padding: EdgeInsets.all(isDesktop ? 24 : 16),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: Color(0xFF0E3B69), // Changed to darker blue
         borderRadius: BorderRadius.circular(16),
@@ -556,128 +680,129 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: 'Search by job title, company, or skills...',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: Color(0xFF1A1A2E),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: Colors.white70),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                  style: GoogleFonts.montserrat(color: Colors.white),
-                ),
-              ),
-              if (isDesktop || isTablet) SizedBox(width: 16),
-              if (isDesktop || isTablet)
-                Container(
-                  height: 55,
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF1A1A2E),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedCategory,
-                      style: GoogleFonts.montserrat(color: Colors.white),
-                      dropdownColor: Color(0xFF1A1A2E),
-                      icon: Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.white70,
+          isMobile
+              ? Column(
+                children: [
+                  // Search field
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'Search jobs, skills, or companies',
+                      hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
                       ),
-                      items:
-                          _categories.map((String category) {
-                            return DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category),
-                            );
-                          }).toList(),
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            _selectedCategory = newValue;
-                          });
-                        }
-                      },
+                      contentPadding: EdgeInsets.zero,
                     ),
-                  ),
-                ),
-            ],
-          ),
-          if (!isDesktop && !isTablet)
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Color(0xFF1A1A2E),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _selectedCategory,
                     style: GoogleFonts.montserrat(color: Colors.white),
-                    dropdownColor: Color(0xFF1A1A2E),
-                    icon: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Colors.white70,
+                  ),
+                  SizedBox(height: 16),
+                  // Category dropdown
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    items:
-                        _categories.map((String category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedCategory = newValue;
-                        });
-                      }
-                    },
-                    hint: Text(
-                      'Select Category',
-                      style: TextStyle(color: Colors.white70),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        dropdownColor: Color(0xFF0E3B69),
+                        value: _selectedCategory,
+                        items:
+                            _categories.map((category) {
+                              return DropdownMenuItem(
+                                value: category,
+                                child: Text(
+                                  category,
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategory = value ?? 'All';
+                          });
+                        },
+                        icon: Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Colors.white,
+                        ),
+                        isExpanded: true,
+                      ),
                     ),
                   ),
-                ),
+                ],
+              )
+              : Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Search jobs, skills, or companies',
+                        hintStyle: GoogleFonts.montserrat(color: Colors.grey),
+                        prefixIcon: Icon(Icons.search, color: Colors.grey),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: GoogleFonts.montserrat(color: Colors.white),
+                    ),
+                  ),
+                  if (isDesktop || isTablet) SizedBox(width: 16),
+                  if (isDesktop || isTablet)
+                    Container(
+                      height: 55,
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          dropdownColor: Color(0xFF0E3B69),
+                          value: _selectedCategory,
+                          items:
+                              _categories.map((category) {
+                                return DropdownMenuItem(
+                                  value: category,
+                                  child: Text(
+                                    category,
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCategory = value ?? 'All';
+                            });
+                          },
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildGridView(bool isDesktop, bool isTablet) {
-    final crossAxisCount = isDesktop ? 3 : (isTablet ? 2 : 1);
-
-    return GridView.builder(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: isDesktop ? 1.2 : 1.3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: _filteredJobOpenings.length,
-      itemBuilder: (context, index) {
-        final job = _filteredJobOpenings[index];
-        return _buildGridJobCard(job);
-      },
     );
   }
 
@@ -687,6 +812,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     final String company = job['company'] ?? 'No Company';
     final String location = job['location'] ?? 'Unknown Location';
     final List<dynamic> skills = job['requiredSkills'] ?? [];
+    final isMobile = MediaQuery.of(context).size.width <= 600;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -722,16 +848,16 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: Color(0xFF0F3460),
+                    color: Colors.white.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
                     child: Text(
-                      company.substring(0, company.length > 0 ? 1 : 0),
+                      company.isNotEmpty ? company[0].toUpperCase() : 'C',
                       style: GoogleFonts.montserrat(
                         color: Colors.white,
-                        fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        fontSize: 24,
                       ),
                     ),
                   ),
@@ -740,9 +866,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 Text(
                   title,
                   style: GoogleFonts.montserrat(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isMobile ? 14 : 16,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -751,21 +877,25 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 Text(
                   company,
                   style: GoogleFonts.montserrat(
-                    fontSize: 16,
-                    color: Colors.blue[200],
+                    color: Colors.grey[300],
+                    fontSize: isMobile ? 12 : 14,
                   ),
                 ),
                 SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.location_on, color: Colors.white70, size: 16),
+                    Icon(
+                      Icons.location_on_outlined,
+                      color: Colors.grey[400],
+                      size: isMobile ? 14 : 16,
+                    ),
                     SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         location,
                         style: GoogleFonts.montserrat(
-                          color: Colors.white70,
-                          fontSize: 14,
+                          color: Colors.grey[400],
+                          fontSize: isMobile ? 11 : 12,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -774,56 +904,54 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 ),
                 SizedBox(height: 16),
                 Expanded(
-                  child:
-                      skills.isNotEmpty
-                          ? Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children:
-                                skills
-                                    .take(3)
-                                    .map(
-                                      (skill) => Chip(
-                                        label: Text(
-                                          skill.toString(),
-                                          style: GoogleFonts.montserrat(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        backgroundColor: Colors.blue.shade700
-                                            .withOpacity(0.7),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                    )
-                                    .toList(),
-                          )
-                          : Text(
-                            'No skills listed',
-                            style: GoogleFonts.montserrat(color: Colors.grey),
-                          ),
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children:
+                        skills
+                            .take(3)
+                            .map(
+                              (skill) => Chip(
+                                label: Text(
+                                  skill.toString(),
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                    fontSize: isMobile ? 10 : 11,
+                                  ),
+                                ),
+                                backgroundColor: Colors.blue.withOpacity(0.2),
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            )
+                            .toList(),
+                  ),
                 ),
                 SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => _showJobDetailsDialog(job),
+                  onPressed: () {
+                    _pickFile(jobId);
+                    if (_resumeFiles[jobId] != null) {
+                      _submitResume(jobId);
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue[700],
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    backgroundColor: Colors.blue,
+                    minimumSize: Size(double.infinity, 40),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('View Details', style: GoogleFonts.montserrat()),
-                      Icon(Icons.arrow_forward, size: 16),
-                    ],
+                  child: Text(
+                    _resumeFiles[jobId] != null
+                        ? 'Submit Resume'
+                        : 'Upload Resume',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w500,
+                      fontSize: isMobile ? 12 : 14,
+                    ),
                   ),
                 ),
               ],
@@ -834,16 +962,6 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     );
   }
 
-  Widget _buildListView() {
-    return ListView.builder(
-      itemCount: _filteredJobOpenings.length,
-      itemBuilder: (context, index) {
-        final job = _filteredJobOpenings[index];
-        return _buildListJobCard(job, index);
-      },
-    );
-  }
-
   Widget _buildListJobCard(Map<String, dynamic> job, int index) {
     final String jobId = job['id'] ?? 'Unknown ID';
     final String title = job['jobTitle'] ?? 'Untitled Job';
@@ -851,6 +969,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     final String location = job['location'] ?? 'Unknown Location';
     final String salary = job['salary'] ?? 'Not Disclosed';
     final List<dynamic> skills = job['requiredSkills'] ?? [];
+    final isMobile = MediaQuery.of(context).size.width <= 600;
 
     return AnimatedContainer(
       duration: Duration(milliseconds: 400),
@@ -873,150 +992,321 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         hoverColor: Colors.blue.withOpacity(0.05),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Company logo placeholder
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Color(0xFF0F3460),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    company.substring(0, company.length > 0 ? 1 : 0),
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+          child:
+              isMobile
+                  ? _buildMobileListJobCard(
+                    job,
+                    jobId,
+                    title,
+                    company,
+                    location,
+                    skills,
+                  )
+                  : _buildDesktopListJobCard(
+                    job,
+                    jobId,
+                    title,
+                    company,
+                    location,
+                    salary,
+                    skills,
+                  ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileListJobCard(
+    Map<String, dynamic> job,
+    String jobId,
+    String title,
+    String company,
+    String location,
+    List<dynamic> skills,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title and logo
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Company logo placeholder
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  company.isNotEmpty ? company[0].toUpperCase() : 'C',
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
                   ),
                 ),
               ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: GoogleFonts.montserrat(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade700.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            salary,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.blue[200],
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      company,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16,
-                        color: Colors.blue[200],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    company,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[300],
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        color: Colors.grey[400],
+                        size: 14,
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          color: Colors.white70,
-                          size: 16,
-                        ),
-                        SizedBox(width: 4),
-                        Text(
+                      SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
                           location,
-                          style: GoogleFonts.montserrat(color: Colors.white70),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children:
-                          skills
-                              .take(4)
-                              .map(
-                                (skill) => Chip(
-                                  label: Text(
-                                    skill.toString(),
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  backgroundColor: Colors.blue.shade700
-                                      .withOpacity(0.7),
-                                  padding: EdgeInsets.symmetric(horizontal: 4),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              )
-                              .toList(),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        OutlinedButton(
-                          onPressed: () => _pickFile(jobId),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(color: Colors.blue.shade200),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
+                          style: GoogleFonts.montserrat(
+                            color: Colors.grey[400],
+                            fontSize: 12,
                           ),
-                          child: Text('Upload Resume'),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () => _showJobDetailsDialog(job),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Colors.blue[700],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Text('View Details'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        SizedBox(height: 16),
+
+        // Skills chips
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children:
+              skills
+                  .take(3)
+                  .map(
+                    (skill) => Chip(
+                      label: Text(
+                        skill.toString(),
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white,
+                          fontSize: 10,
                         ),
-                      ],
+                      ),
+                      backgroundColor: Colors.blue.withOpacity(0.2),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ],
+                  )
+                  .toList(),
+        ),
+
+        SizedBox(height: 16),
+
+        // Upload/Submit buttons
+        ElevatedButton(
+          onPressed: () {
+            _pickFile(jobId);
+            if (_resumeFiles[jobId] != null) {
+              _submitResume(jobId);
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.blue,
+            minimumSize: Size(double.infinity, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: Text(
+            _resumeFiles[jobId] != null ? 'Submit Resume' : 'Upload Resume',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopListJobCard(
+    Map<String, dynamic> job,
+    String jobId,
+    String title,
+    String company,
+    String location,
+    String salary,
+    List<dynamic> skills,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Company logo placeholder
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              company.isNotEmpty ? company[0].toUpperCase() : 'C',
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.montserrat(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
+              ),
+              SizedBox(height: 8),
+              Row(
+                children: [
+                  Text(
+                    company,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[300],
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Icon(
+                    Icons.location_on_outlined,
+                    color: Colors.grey[400],
+                    size: 14,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    location,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Icon(Icons.attach_money, color: Colors.grey[400], size: 14),
+                  SizedBox(width: 4),
+                  Text(
+                    salary,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    skills
+                        .take(4)
+                        .map(
+                          (skill) => Chip(
+                            label: Text(
+                              skill.toString(),
+                              style: GoogleFonts.montserrat(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                            backgroundColor: Colors.blue.withOpacity(0.2),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 0,
+                            ),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        )
+                        .toList(),
               ),
             ],
           ),
         ),
-      ),
+        SizedBox(width: 16),
+        Column(
+          children: [
+            ElevatedButton(
+              onPressed: () => _pickFile(jobId),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.blue,
+                minimumSize: Size(130, 40),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Upload Resume',
+                style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
+              ),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed:
+                  _resumeFiles[jobId] == null
+                      ? null
+                      : () => _submitResume(jobId),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.green,
+                minimumSize: Size(130, 40),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                disabledBackgroundColor: Colors.grey.withOpacity(0.5),
+              ),
+              child: Text(
+                'Submit',
+                style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1032,6 +1322,8 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         job['jobDescription'] ?? 'No Description Available';
     final List<dynamic> skills = job['requiredSkills'] ?? [];
 
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1042,7 +1334,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
           ),
           child: Container(
             constraints: BoxConstraints(
-              maxWidth: 800,
+              maxWidth: isMobile ? double.infinity : 800,
               maxHeight: MediaQuery.of(context).size.height * 0.8,
             ),
             child: Column(
@@ -1051,7 +1343,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 Container(
                   padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Color(0xFF0F3460),
+                    color: Color(0xFF0D3B66),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -1061,48 +1353,69 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Text(
                               title,
                               style: GoogleFonts.montserrat(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
                                 color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isMobile ? 18 : 24,
                               ),
                             ),
                           ),
                           IconButton(
                             icon: Icon(Icons.close, color: Colors.white),
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
                       SizedBox(height: 8),
-                      Text(
-                        company,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 18,
-                          color: Colors.blue[200],
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.business,
+                            color: Colors.blue[200],
+                            size: isMobile ? 16 : 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            company,
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontSize: isMobile ? 14 : 16,
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 4),
                       Row(
                         children: [
                           Icon(
-                            Icons.location_on,
-                            color: Colors.white70,
-                            size: 18,
+                            Icons.location_on_outlined,
+                            color: Colors.blue[200],
+                            size: isMobile ? 16 : 20,
                           ),
-                          SizedBox(width: 4),
+                          SizedBox(width: 8),
                           Text(
                             location,
                             style: GoogleFonts.montserrat(
-                              color: Colors.white70,
-                              fontSize: 16,
+                              color: Colors.white,
+                              fontSize: isMobile ? 14 : 16,
                             ),
                           ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildHighlightItem(Icons.work, employmentType),
+                          _buildHighlightItem(
+                            Icons.trending_up,
+                            experienceLevel,
+                          ),
+                          _buildHighlightItem(Icons.attach_money, salary),
                         ],
                       ),
                     ],
@@ -1116,147 +1429,119 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Job highlights
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF1A1A2E),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildHighlightItem(Icons.attach_money, salary),
-                              VerticalDivider(color: Colors.white30, width: 40),
-                              _buildHighlightItem(Icons.work, employmentType),
-                              VerticalDivider(color: Colors.white30, width: 40),
-                              _buildHighlightItem(
-                                Icons.timeline,
-                                experienceLevel,
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 24),
-
-                        // Job description
                         Text(
                           'Job Description',
                           style: GoogleFonts.montserrat(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
                             color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: isMobile ? 16 : 18,
                           ),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 8),
                         Text(
                           description,
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white70,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white.withOpacity(0.9),
                             height: 1.5,
-                            fontSize: 15,
+                            fontSize: isMobile ? 14 : 16,
                           ),
                         ),
                         SizedBox(height: 24),
-
-                        // Required skills
                         Text(
                           'Required Skills',
                           style: GoogleFonts.montserrat(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
                             color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: isMobile ? 16 : 18,
                           ),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children:
-                              skills.map((skill) {
-                                return Chip(
-                                  label: Text(
-                                    skill.toString(),
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  backgroundColor: Colors.blue.shade800,
-                                );
-                              }).toList(),
-                        ),
-                        SizedBox(height: 24),
-
-                        // Upload resume
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Color(0xFF1A1A2E),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.blue.shade700.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Apply for this position',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: () => _pickFile(jobId),
-                                    icon: Icon(Icons.upload_file),
-                                    label: Text('Choose Resume'),
-                                    style: ElevatedButton.styleFrom(
-                                      foregroundColor: Colors.white,
-                                      backgroundColor: Colors.grey[700],
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
+                              skills
+                                  .map(
+                                    (skill) => Chip(
+                                      label: Text(
+                                        skill.toString(),
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontSize: isMobile ? 12 : 14,
+                                        ),
+                                      ),
+                                      backgroundColor: Colors.blue.withOpacity(
+                                        0.3,
                                       ),
                                     ),
+                                  )
+                                  .toList(),
+                        ),
+                        SizedBox(height: 24),
+                        _buildDetailRow('Employment Type', employmentType),
+                        _buildDetailRow('Experience', experienceLevel),
+                        _buildDetailRow('Salary', salary),
+                        _buildDetailRow('Location', location),
+                        SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => _pickFile(jobId),
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.blue,
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  SizedBox(width: 16),
-                                  Expanded(
-                                    child: Text(
-                                      _resumeFiles[jobId]?.name ??
-                                          'No file selected',
-                                      style: TextStyle(color: Colors.white70),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: () => _submitResume(jobId),
-                                  icon: Icon(Icons.send),
-                                  label: Text(
-                                    'Submit Application',
-                                    style: GoogleFonts.montserrat(fontSize: 16),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    backgroundColor: Colors.blue,
-                                    padding: EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
+                                ),
+                                child: Text(
+                                  'Upload Resume',
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isMobile ? 14 : 16,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed:
+                                    _resumeFiles[jobId] == null
+                                        ? null
+                                        : () => _submitResume(jobId),
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.green,
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Submit Application',
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: isMobile ? 14 : 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                        SizedBox(height: 8),
+                        if (_resumeFiles[jobId] != null)
+                          Center(
+                            child: Text(
+                              'File: ${_resumeFiles[jobId]!.name}',
+                              style: GoogleFonts.poppins(
+                                color: Colors.green,
+                                fontSize: isMobile ? 12 : 14,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -1270,15 +1555,22 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
   }
 
   Widget _buildHighlightItem(IconData icon, String text) {
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: Colors.blue[200], size: 24),
+          Icon(icon, color: Colors.blue[200], size: isMobile ? 20 : 24),
           SizedBox(height: 8),
           Text(
             text,
-            style: GoogleFonts.montserrat(color: Colors.white),
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontSize: isMobile ? 12 : 14,
+            ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1286,23 +1578,32 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 150,
+            width: isMobile ? 100 : 150,
             child: Text(
               label + ':',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w500,
                 color: Colors.white70,
+                fontSize: isMobile ? 14 : 16,
               ),
             ),
           ),
           Expanded(
-            child: Text(value, style: GoogleFonts.poppins(color: Colors.white)),
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: isMobile ? 14 : 16,
+              ),
+            ),
           ),
         ],
       ),

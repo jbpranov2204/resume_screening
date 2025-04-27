@@ -1,7 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:resume_screening/App_routes.dart';
+import 'package:resume_screening/Web_Login_page.dart';
 import 'package:resume_screening/firebase_options.dart';
+import 'package:resume_screening/responsive.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,7 @@ class ResumeAIApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Resume AI - Login',
+      home: Responsive(),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -26,8 +28,6 @@ class ResumeAIApp extends StatelessWidget {
           floatingLabelBehavior: FloatingLabelBehavior.auto,
         ),
       ),
-      initialRoute: AppRoutes.login,
-      routes: AppRoutes.routes,
     );
   }
 }

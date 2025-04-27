@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:resume_screening/Mobile_Signup_Page.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -32,10 +33,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _fadeInController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(
+      CurvedAnimation(parent: _fadeInController, curve: Curves.easeOut),
+    );
 
     _fadeInController.forward();
   }
@@ -63,9 +63,9 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
       _isLoading = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sign-up successful!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Sign-up successful!')));
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) {
@@ -84,8 +84,16 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // Check if we should show mobile layout
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (isMobile) {
+      return MobileSignUpPage();
+    }
+
     final isWide = MediaQuery.of(context).size.width > 900;
 
+    // Regular desktop/tablet layout
     return Scaffold(
       body: Stack(
         children: [
@@ -94,7 +102,11 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
             duration: const Duration(seconds: 2),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+                colors: [
+                  Color(0xFF0F2027),
+                  Color(0xFF203A43),
+                  Color(0xFF2C5364),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -127,8 +139,11 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                             AnimatedScale(
                               scale: 1,
                               duration: const Duration(milliseconds: 500),
-                              child: Icon(Icons.person_add_alt_1,
-                                  size: 60, color: Colors.white),
+                              child: Icon(
+                                Icons.person_add_alt_1,
+                                size: 60,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -152,24 +167,31 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
 
                             TextFormField(
                               controller: _fullNameController,
-                              decoration:
-                                  _inputDecoration("Full Name", Icons.person),
-                              validator: (value) => value == null || value.isEmpty
-                                  ? "Enter full name"
-                                  : null,
+                              decoration: _inputDecoration(
+                                "Full Name",
+                                Icons.person,
+                              ),
+                              validator:
+                                  (value) =>
+                                      value == null || value.isEmpty
+                                          ? "Enter full name"
+                                          : null,
                             ),
                             const SizedBox(height: 16),
 
                             TextFormField(
                               controller: _emailController,
-                              decoration:
-                                  _inputDecoration("Email", Icons.email),
+                              decoration: _inputDecoration(
+                                "Email",
+                                Icons.email,
+                              ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return "Enter email";
                                 }
                                 final emailRegex = RegExp(
-                                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                );
                                 return !emailRegex.hasMatch(value)
                                     ? "Enter a valid email"
                                     : null;
@@ -180,11 +202,15 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                             TextFormField(
                               controller: _passwordController,
                               obscureText: true,
-                              decoration:
-                                  _inputDecoration("Password", Icons.lock),
-                              validator: (value) => value == null || value.length < 6
-                                  ? "Min 6 characters"
-                                  : null,
+                              decoration: _inputDecoration(
+                                "Password",
+                                Icons.lock,
+                              ),
+                              validator:
+                                  (value) =>
+                                      value == null || value.length < 6
+                                          ? "Min 6 characters"
+                                          : null,
                             ),
                             const SizedBox(height: 16),
 
@@ -200,17 +226,24 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _handleSignUp,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white.withOpacity(0.95),
+                                  backgroundColor: Colors.white.withOpacity(
+                                    0.95,
+                                  ),
                                   foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: _isLoading
-                                    ? const CircularProgressIndicator()
-                                    : const Text("Sign Up",
-                                        style: TextStyle(fontSize: 16)),
+                                child:
+                                    _isLoading
+                                        ? const CircularProgressIndicator()
+                                        : const Text(
+                                          "Sign Up",
+                                          style: TextStyle(fontSize: 16),
+                                        ),
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -218,13 +251,17 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text("Already have an account?",
-                                    style: TextStyle(color: Colors.white70)),
+                                const Text(
+                                  "Already have an account?",
+                                  style: TextStyle(color: Colors.white70),
+                                ),
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
-                                  child: const Text("Login",
-                                      style: TextStyle(color: Colors.white)),
-                                )
+                                  child: const Text(
+                                    "Login",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -241,4 +278,3 @@ class _SignUpPageState extends State<SignUpPage> with TickerProviderStateMixin {
     );
   }
 }
-

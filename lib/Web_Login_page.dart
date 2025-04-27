@@ -6,16 +6,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:marquee/marquee.dart';
 import 'package:resume_screening/1_page.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:resume_screening/Signup_page.dart';
 import 'package:resume_screening/user_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class WebLoginPage extends StatefulWidget {
+  const WebLoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<WebLoginPage> createState() => _WebLoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
+class _WebLoginPageState extends State<WebLoginPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -113,7 +114,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   void _navigateToUserPage() {
     // Add haptic feedback for better user experience
     HapticFeedback.mediumImpact();
-    
+
     // Navigate to user page (assuming it's the JobOpeningsPage)
     Navigator.push(
       context,
@@ -122,38 +123,40 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   }
 
   // Enhanced input decoration with animations
-  InputDecoration _inputDecoration(String label, IconData icon, bool isFocused) {
+  InputDecoration _inputDecoration(
+    String label,
+    IconData icon,
+    bool isFocused,
+  ) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(
         icon,
         color: isFocused ? Theme.of(context).primaryColor : Colors.grey[700],
       ),
-      suffixIcon: label == "Password"
-          ? IconButton(
-              icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                transitionBuilder: (child, animation) {
-                  return ScaleTransition(
-                    scale: animation,
-                    child: child,
-                  );
-                },
-                child: Icon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey[600],
-                  key: ValueKey<bool>(_obscurePassword),
+      suffixIcon:
+          label == "Password"
+              ? IconButton(
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(scale: animation, child: child);
+                  },
+                  child: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.grey[600],
+                    key: ValueKey<bool>(_obscurePassword),
+                  ),
                 ),
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-                // Add micro-interaction feedback
-                HapticFeedback.selectionClick();
-              },
-            )
-          : null,
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                  // Add micro-interaction feedback
+                  HapticFeedback.selectionClick();
+                },
+              )
+              : null,
       filled: true,
       fillColor: Colors.white.withOpacity(isFocused ? 0.95 : 0.85),
       border: OutlineInputBorder(
@@ -188,82 +191,88 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             left: 700,
             right: 40,
             child: Center(
-                child: GestureDetector(
-                  onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => JobOpeningsPage()),
-      );
-    },
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Container(
-                      height: 35,
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color.fromARGB(75, 46, 158, 255).withOpacity(0.8),
-                            const Color.fromARGB(109, 156, 196, 243).withOpacity(0.8),
-                          ],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => JobOpeningsPage()),
+                  );
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    height: 35,
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color.fromARGB(
+                            75,
+                            46,
+                            158,
+                            255,
+                          ).withOpacity(0.8),
+                          const Color.fromARGB(
+                            109,
+                            156,
+                            196,
+                            243,
+                          ).withOpacity(0.8),
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(66, 255, 226, 226),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
                         ),
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color.fromARGB(66, 255, 226, 226),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.work_outline,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          SizedBox(width: 10),
-                          // Fixed Marquee implementation
-                          Expanded(
-                            child: Marquee(
-                              text: 'Job Openings • Find Your Dream Job • Apply Now • ',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18, // Slightly smaller font
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              scrollAxis: Axis.horizontal,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              blankSpace: 40.0,
-                              velocity: 50.0,
-                              pauseAfterRound: Duration(seconds: 1),
-                              startPadding: 10.0,
-                              accelerationDuration: Duration(seconds: 1),
-                              accelerationCurve: Curves.linear,
-                              decelerationDuration: Duration(milliseconds: 500),
-                              decelerationCurve: Curves.easeOut,
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.work_outline, color: Colors.white, size: 24),
+                        SizedBox(width: 10),
+                        // Fixed Marquee implementation
+                        Expanded(
+                          child: Marquee(
+                            text:
+                                'Job Openings • Find Your Dream Job • Apply Now • ',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18, // Slightly smaller font
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
+                            scrollAxis: Axis.horizontal,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            blankSpace: 40.0,
+                            velocity: 50.0,
+                            pauseAfterRound: Duration(seconds: 1),
+                            startPadding: 10.0,
+                            accelerationDuration: Duration(seconds: 1),
+                            accelerationCurve: Curves.linear,
+                            decelerationDuration: Duration(milliseconds: 500),
+                            decelerationCurve: Curves.easeOut,
                           ),
-                          SizedBox(width: 10),
-                          Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ],
-                      ),
+                        ),
+                        SizedBox(width: 10),
+                        Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-            
+              ),
             ),
           ),
-          
+
           // Main content
           Row(
             children: [
@@ -276,10 +285,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     Stack(
                       children: [
                         SizedBox.expand(
-                          child: Image.asset(
-                            'assets/n.jpg',
-                            fit: BoxFit.cover,
-                          ),
+                          child: Image.asset('assets/n.jpg', fit: BoxFit.cover),
                         ),
                         Container(
                           // Your content goes here
@@ -308,7 +314,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 blurRadius: 10,
                                 color: Colors.black.withOpacity(0.3),
                                 offset: const Offset(0, 5),
-                              )
+                              ),
                             ],
                           ),
                         ),
@@ -347,11 +353,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutQuint,
-      transform: Matrix4.translationValues(
-        0,
-        _isLoading ? -10.0 : 0.0,
-        0,
-      ),
+      transform: Matrix4.translationValues(0, _isLoading ? -10.0 : 0.0, 0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
@@ -359,12 +361,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             sigmaX: _isLoading ? 10 : 20,
             sigmaY: _isLoading ? 10 : 20,
           ),
-          child: AnimatedContainer( // Using AnimatedContainer for animated properties
+          child: AnimatedContainer(
+            // Using AnimatedContainer for animated properties
             duration: const Duration(milliseconds: 500),
             padding: const EdgeInsets.all(32),
             width: 400,
             decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 255, 255, 255).withOpacity(_isLoading ? 0.2 : 0.15),
+              color: const Color.fromARGB(
+                255,
+                255,
+                255,
+                255,
+              ).withOpacity(_isLoading ? 0.2 : 0.15),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: Colors.grey.withOpacity(0.2),
@@ -376,8 +384,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   blurRadius: 20,
                   spreadRadius: 5,
                   offset: const Offset(0, 5),
-                )
-              ]
+                ),
+              ],
             ),
             child: Form(
               key: _formKey,
@@ -435,21 +443,32 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                       child: TextFormField(
                         controller: _emailController,
                         focusNode: _emailFocusNode,
-                        decoration: _inputDecoration("Email", Icons.email, _isEmailFocused),
+                        decoration: _inputDecoration(
+                          "Email",
+                          Icons.email,
+                          _isEmailFocused,
+                        ),
                         style: TextStyle(
                           color: Colors.black87,
-                          fontWeight: _isEmailFocused ? FontWeight.w500 : FontWeight.normal,
+                          fontWeight:
+                              _isEmailFocused
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
                         ),
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         onFieldSubmitted: (_) {
-                          FocusScope.of(context).requestFocus(_passwordFocusNode);
+                          FocusScope.of(
+                            context,
+                          ).requestFocus(_passwordFocusNode);
                         },
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter your email';
                           }
-                          final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          final emailRegex = RegExp(
+                            r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          );
                           if (!emailRegex.hasMatch(value)) {
                             return 'Enter a valid email';
                           }
@@ -475,10 +494,17 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         controller: _passwordController,
                         focusNode: _passwordFocusNode,
                         obscureText: _obscurePassword,
-                        decoration: _inputDecoration("Password", Icons.lock, _isPasswordFocused),
+                        decoration: _inputDecoration(
+                          "Password",
+                          Icons.lock,
+                          _isPasswordFocused,
+                        ),
                         style: TextStyle(
                           color: Colors.black87,
-                          fontWeight: _isPasswordFocused ? FontWeight.w500 : FontWeight.normal,
+                          fontWeight:
+                              _isPasswordFocused
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -503,7 +529,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.black54,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                         ),
                         child: Text(
                           "Forgot Password?",
@@ -521,41 +550,50 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   // Error message with animation
                   AnimatedSize(
                     duration: const Duration(milliseconds: 300),
-                    child: _errorMessage != null
-                        ? FadeIn(
-                            child: ShakeAnimation(
-                              controller: _shakeController,
-                              child: Container(
-                                margin: const EdgeInsets.only(top: 16, bottom: 10),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.error_outline,
-                                      color: Colors.redAccent,
-                                      size: 20,
+                    child:
+                        _errorMessage != null
+                            ? FadeIn(
+                              child: ShakeAnimation(
+                                controller: _shakeController,
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                    top: 16,
+                                    bottom: 10,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.redAccent.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.redAccent.withOpacity(0.3),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _errorMessage!,
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.redAccent,
-                                          fontWeight: FontWeight.w500,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline,
+                                        color: Colors.redAccent,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _errorMessage!,
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.redAccent,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          )
-                        : const SizedBox(height: 16),
+                            )
+                            : const SizedBox(height: 16),
                   ),
 
                   // Login Button with animations
@@ -564,19 +602,29 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     child: AnimatedBuilder(
                       animation: _loginButtonController,
                       builder: (context, child) {
-                        final buttonScale = Tween<double>(begin: 1.0, end: 0.95)
-                            .animate(CurvedAnimation(
-                          parent: _loginButtonController,
-                          curve: Interval(0.0, 0.5, curve: Curves.easeOut),
-                          reverseCurve: Interval(0.5, 1.0, curve: Curves.easeIn),
-                        ));
+                        final buttonScale = Tween<double>(
+                          begin: 1.0,
+                          end: 0.95,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: _loginButtonController,
+                            curve: Interval(0.0, 0.5, curve: Curves.easeOut),
+                            reverseCurve: Interval(
+                              0.5,
+                              1.0,
+                              curve: Curves.easeIn,
+                            ),
+                          ),
+                        );
 
                         return GestureDetector(
-                          onTap:(){
+                          onTap: () {
                             Navigator.push(
-                            context,
-                             MaterialPageRoute(builder: (context) => DashboardPage()),
-                             );
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DashboardPage(),
+                              ),
+                            );
                           },
                           onTapDown: (_) {
                             if (!_isLoading) {
@@ -591,7 +639,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             setState(() => _isLoginButtonPressed = false);
                           },
                           child: Transform.scale(
-                            scale: _isLoginButtonPressed ? 0.98 : buttonScale.value,
+                            scale:
+                                _isLoginButtonPressed
+                                    ? 0.98
+                                    : buttonScale.value,
                             child: Container(
                               width: double.infinity,
                               height: 56,
@@ -618,32 +669,36 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                 color: Colors.transparent,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(14),
-                                
+
                                   splashColor: Colors.white.withOpacity(0.1),
-                                  highlightColor: Colors.white.withOpacity(0.05),
+                                  highlightColor: Colors.white.withOpacity(
+                                    0.05,
+                                  ),
                                   child: Center(
-                                    child: _isLoading
-                                        ? _buildLoadingIndicator()
-                                        : Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                "Login",
-                                                style: GoogleFonts.poppins(
-                                                  color: Colors.white,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  letterSpacing: 0.5,
+                                    child:
+                                        _isLoading
+                                            ? _buildLoadingIndicator()
+                                            : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  "Login",
+                                                  style: GoogleFonts.poppins(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    letterSpacing: 0.5,
+                                                  ),
                                                 ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Icon(
-                                                Icons.arrow_forward_rounded,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
-                                            ],
-                                          ),
+                                                const SizedBox(width: 8),
+                                                Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
+                                              ],
+                                            ),
                                   ),
                                 ),
                               ),
@@ -671,7 +726,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         ),
                         TextButton(
                           onPressed: () {
-                            HapticFeedback.selectionClick();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SignUpPage(),
+                              ),
+                            );
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.blue,
@@ -707,7 +767,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildSocialButton(Icons.g_mobiledata, Colors.red),
+                              _buildSocialButton(
+                                Icons.g_mobiledata,
+                                Colors.red,
+                              ),
                               const SizedBox(width: 16),
                               _buildSocialButton(Icons.facebook, Colors.blue),
                               const SizedBox(width: 16),
@@ -763,15 +826,9 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 24,
-        ),
+        child: Icon(icon, color: color, size: 24),
       ),
     );
   }
@@ -789,15 +846,26 @@ class ParticleModel {
   ParticleModel(Random random) {
     final colors = [Colors.white, Colors.blueAccent, Colors.lightBlueAccent];
 
-    x = Tween<double>(begin: 0, end: 1).chain(CurveTween(curve: Curves.easeInOut));
-    y = Tween<double>(begin: random.nextDouble(), end: random.nextDouble())
-        .chain(CurveTween(curve: Curves.easeInOut));
-    size = Tween<double>(begin: 2 + random.nextDouble() * 4, end: 6 + random.nextDouble() * 8)
-        .chain(CurveTween(curve: Curves.easeInOut));
-    speed = Tween<double>(begin: 0.05, end: 0.1 + random.nextDouble() * 0.1)
-        .chain(CurveTween(curve: Curves.easeInOut));
-    opacity = Tween<double>(begin: 0.1 + random.nextDouble() * 0.3, end: 0.3 + random.nextDouble() * 0.2)
-        .chain(CurveTween(curve: Curves.easeInOut));
+    x = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).chain(CurveTween(curve: Curves.easeInOut));
+    y = Tween<double>(
+      begin: random.nextDouble(),
+      end: random.nextDouble(),
+    ).chain(CurveTween(curve: Curves.easeInOut));
+    size = Tween<double>(
+      begin: 2 + random.nextDouble() * 4,
+      end: 6 + random.nextDouble() * 8,
+    ).chain(CurveTween(curve: Curves.easeInOut));
+    speed = Tween<double>(
+      begin: 0.05,
+      end: 0.1 + random.nextDouble() * 0.1,
+    ).chain(CurveTween(curve: Curves.easeInOut));
+    opacity = Tween<double>(
+      begin: 0.1 + random.nextDouble() * 0.3,
+      end: 0.3 + random.nextDouble() * 0.2,
+    ).chain(CurveTween(curve: Curves.easeInOut));
     color = colors[random.nextInt(colors.length)];
   }
 }
@@ -819,9 +887,10 @@ class ParticlesPainter extends CustomPainter {
       final particleSize = particle.size.transform(progress);
       final opacity = particle.opacity.transform(progress);
 
-      final paint = Paint()
-        ..color = particle.color.withOpacity(opacity)
-        ..style = PaintingStyle.fill;
+      final paint =
+          Paint()
+            ..color = particle.color.withOpacity(opacity)
+            ..style = PaintingStyle.fill;
 
       canvas.drawCircle(Offset(xPos, yPos), particleSize, paint);
     }
