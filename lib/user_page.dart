@@ -151,7 +151,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       // Create multipart request
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://resume25.pythonanywhere.com/analyze'),
+        Uri.parse('http://yuva1234.pythonanywhere.com/analyze'),
       );
 
       // Add file to the request
@@ -452,6 +452,54 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         ),
       ),
     );
+  }
+
+  // Helper to build the correct list job card based on device type
+  Widget _buildListJobCard(Map<String, dynamic> job, int index) {
+    final String jobId = job['id'] ?? 'Unknown ID';
+    final String title = job['jobTitle'] ?? 'Untitled Job';
+    final String company = job['company'] ?? 'No Company';
+    final String location = job['location'] ?? 'Unknown Location';
+    final String salary = job['salary'] ?? 'Not Disclosed';
+    final List<dynamic> skills = job['requiredSkills'] ?? [];
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+
+    if (isMobile) {
+      return Card(
+        color: Color(0xFF0E3B69),
+        margin: EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _buildMobileListJobCard(
+            job,
+            jobId,
+            title,
+            company,
+            location,
+            skills,
+          ),
+        ),
+      );
+    } else {
+      return Card(
+        color: Color(0xFF0E3B69),
+        margin: EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: _buildDesktopListJobCard(
+            job,
+            jobId,
+            title,
+            company,
+            location,
+            salary,
+            skills,
+          ),
+        ),
+      );
+    }
   }
 
   void _showMobileMenu(BuildContext context) {
@@ -819,7 +867,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Color(0xFF0E3B69), // Changed to darker blue
+          color: Color(0xFF0E3B69),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -832,12 +880,8 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         child: InkWell(
           onTap: () => _showJobDetailsDialog(job),
           borderRadius: BorderRadius.circular(16),
-          hoverColor: Color(
-            0xFFFFD700,
-          ).withOpacity(0.05), // Changed hover color
-          splashColor: Color(
-            0xFFFFD700,
-          ).withOpacity(0.1), // Changed splash color
+          hoverColor: Color(0xFFFFD700).withOpacity(0.05),
+          splashColor: Color(0xFFFFD700).withOpacity(0.1),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -929,13 +973,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                   ),
                 ),
                 SizedBox(height: 16),
+                // Separate Upload and Submit buttons
                 ElevatedButton(
-                  onPressed: () {
-                    _pickFile(jobId);
-                    if (_resumeFiles[jobId] != null) {
-                      _submitResume(jobId);
-                    }
-                  },
+                  onPressed: () => _pickFile(jobId),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.blue,
@@ -945,72 +985,50 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                     ),
                   ),
                   child: Text(
-                    _resumeFiles[jobId] != null
-                        ? 'Submit Resume'
-                        : 'Upload Resume',
+                    'Upload Resume',
                     style: GoogleFonts.montserrat(
                       fontWeight: FontWeight.w500,
                       fontSize: isMobile ? 12 : 14,
                     ),
                   ),
                 ),
+                SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed:
+                      _resumeFiles[jobId] == null
+                          ? null
+                          : () => _submitResume(jobId),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.green,
+                    minimumSize: Size(double.infinity, 40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    disabledBackgroundColor: Colors.grey.withOpacity(0.5),
+                  ),
+                  child: Text(
+                    'Submit Resume',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w500,
+                      fontSize: isMobile ? 12 : 14,
+                    ),
+                  ),
+                ),
+                if (_resumeFiles[jobId] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6.0),
+                    child: Text(
+                      'File: ${_resumeFiles[jobId]!.name}',
+                      style: GoogleFonts.poppins(
+                        color: Colors.green,
+                        fontSize: isMobile ? 10 : 12,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildListJobCard(Map<String, dynamic> job, int index) {
-    final String jobId = job['id'] ?? 'Unknown ID';
-    final String title = job['jobTitle'] ?? 'Untitled Job';
-    final String company = job['company'] ?? 'No Company';
-    final String location = job['location'] ?? 'Unknown Location';
-    final String salary = job['salary'] ?? 'Not Disclosed';
-    final List<dynamic> skills = job['requiredSkills'] ?? [];
-    final isMobile = MediaQuery.of(context).size.width <= 600;
-
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 400),
-      curve: Curves.easeOutQuart,
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Color(0xFF0D518C), // Changed to medium blue
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _showJobDetailsDialog(job),
-        borderRadius: BorderRadius.circular(16),
-        hoverColor: Colors.blue.withOpacity(0.05),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child:
-              isMobile
-                  ? _buildMobileListJobCard(
-                    job,
-                    jobId,
-                    title,
-                    company,
-                    location,
-                    skills,
-                  )
-                  : _buildDesktopListJobCard(
-                    job,
-                    jobId,
-                    title,
-                    company,
-                    location,
-                    salary,
-                    skills,
-                  ),
         ),
       ),
     );
@@ -1128,14 +1146,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
 
         SizedBox(height: 16),
 
-        // Upload/Submit buttons
+        // Separate Upload and Submit buttons
         ElevatedButton(
-          onPressed: () {
-            _pickFile(jobId);
-            if (_resumeFiles[jobId] != null) {
-              _submitResume(jobId);
-            }
-          },
+          onPressed: () => _pickFile(jobId),
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.blue,
@@ -1145,13 +1158,42 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             ),
           ),
           child: Text(
-            _resumeFiles[jobId] != null ? 'Submit Resume' : 'Upload Resume',
+            'Upload Resume',
             style: GoogleFonts.montserrat(
               fontWeight: FontWeight.w500,
               fontSize: 12,
             ),
           ),
         ),
+        SizedBox(height: 8),
+        ElevatedButton(
+          onPressed:
+              _resumeFiles[jobId] == null ? null : () => _submitResume(jobId),
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Colors.green,
+            minimumSize: Size(double.infinity, 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            disabledBackgroundColor: Colors.grey.withOpacity(0.5),
+          ),
+          child: Text(
+            'Submit Resume',
+            style: GoogleFonts.montserrat(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+          ),
+        ),
+        if (_resumeFiles[jobId] != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6.0),
+            child: Text(
+              'File: ${_resumeFiles[jobId]!.name}',
+              style: GoogleFonts.poppins(color: Colors.green, fontSize: 10),
+            ),
+          ),
       ],
     );
   }
@@ -1304,6 +1346,14 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 style: GoogleFonts.montserrat(fontWeight: FontWeight.w500),
               ),
             ),
+            if (_resumeFiles[jobId] != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6.0),
+                child: Text(
+                  'File: ${_resumeFiles[jobId]!.name}',
+                  style: GoogleFonts.poppins(color: Colors.green, fontSize: 10),
+                ),
+              ),
           ],
         ),
       ],
@@ -1519,6 +1569,8 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
+                                  disabledBackgroundColor: Colors.grey
+                                      .withOpacity(0.5),
                                 ),
                                 child: Text(
                                   'Submit Application',
