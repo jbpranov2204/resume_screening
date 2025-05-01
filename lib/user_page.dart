@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'services/resume_analyzer.dart'; // Add this import
 
 class JobOpeningsPage extends StatefulWidget {
   @override
@@ -129,7 +130,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     }
   }
 
-  Future<void> _submitResume(String jobId) async {
+  // change signature & implementation to accept full job
+  Future<void> _submitResume(Map<String, dynamic> job) async {
+    final String jobId = job['id'] as String;
     if (_resumeFiles[jobId] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -145,58 +148,69 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     });
 
     try {
-      final job = _jobOpenings.firstWhere((job) => job['id'] == jobId);
       final resumeFile = _resumeFiles[jobId]!;
 
-      // Create multipart request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://yuva1234.pythonanywhere.com/analyze'),
-      );
+      if (resumeFile.bytes == null || resumeFile.bytes!.isEmpty) {
+        throw Exception("Resume file is empty. Please upload a valid resume.");
+      }
 
-      // Add file to the request
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'file',
-          resumeFile.bytes!,
-          filename: resumeFile.name,
+      // Show a message that analysis is in progress
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Uploading your resume... This may take a moment.'),
+          duration: Duration(seconds: 2),
         ),
       );
 
-      // Send the request
-      var response = await request.send();
+      // Use the updated ResumeAnalyzer to analyze the resume
+      final analysisResult = await ResumeAnalyzer.analyzeResume(
+        resumeFile.bytes!,
+      );
 
-      // Get the response
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = jsonDecode(responseData);
+      // Check if there's an error in the result
+      if (analysisResult.containsKey('error')) {
+        throw Exception(analysisResult['error']);
+      }
 
-      // Print the response to console
+      // Calculate grade and likelihood for better user feedback
+      int overallScore = analysisResult['overall_score'] ?? 0;
+      String grade = ResumeAnalyzer.calculateGrade(overallScore);
+      String likelihood = ResumeAnalyzer.getSelectionLikelihood(overallScore);
+
+      // Print the response to console for debugging
       print('Resume Analysis Result:');
-      print(jsonResponse);
+      print(analysisResult);
 
-      // Save analysis results to Firestore
+      // Save analysis results to Firestore with additional metadata
       await _firestore.collection('resume_analysis_results').add({
         'jobId': jobId,
         'jobTitle': job['jobTitle'],
-        'analysisResult': jsonResponse,
+        'analysisResult': analysisResult,
         'submittedAt': FieldValue.serverTimestamp(),
+        'overallScore': overallScore,
+        'grade': grade,
+        'selectionLikelihood': likelihood,
+        'candidateName': analysisResult['personal_info']?['name'] ?? 'Unknown',
+        'candidateEmail':
+            analysisResult['personal_info']?['email'] ?? 'Unknown',
+        'fileName': resumeFile.name,
       });
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Resume submitted and analyzed successfully for ${job['jobTitle']} position',
-          ),
+          content: Text('Resume uploaded successfully for ${job['jobTitle']}'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
         ),
       );
     } catch (e) {
-      print('Error submitting resume: $e');
+      print('Error analyzing resume: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to submit resume: ${e.toString()}'),
+          content: Text('Failed to analyze resume: ${e.toString()}'),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
         ),
       );
     } finally {
@@ -438,7 +452,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Analyzing resume...',
+                        'Uploading resume...',
                         style: GoogleFonts.montserrat(
                           color: Colors.white,
                           fontSize: 16,
@@ -854,6 +868,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     );
   }
 
+  // Grid view: pass full job
   Widget _buildGridJobCard(Map<String, dynamic> job) {
     final String jobId = job['id'] ?? 'Unknown ID';
     final String title = job['jobTitle'] ?? 'Untitled Job';
@@ -997,7 +1012,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                   onPressed:
                       _resumeFiles[jobId] == null
                           ? null
-                          : () => _submitResume(jobId),
+                          : () => _submitResume(job),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.green,
@@ -1168,7 +1183,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         SizedBox(height: 8),
         ElevatedButton(
           onPressed:
-              _resumeFiles[jobId] == null ? null : () => _submitResume(jobId),
+              _resumeFiles[jobId] == null ? null : () => _submitResume(job),
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.green,
@@ -1329,9 +1344,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             SizedBox(height: 8),
             ElevatedButton(
               onPressed:
-                  _resumeFiles[jobId] == null
-                      ? null
-                      : () => _submitResume(jobId),
+                  _resumeFiles[jobId] == null ? null : () => _submitResume(job),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
                 backgroundColor: Colors.green,
@@ -1360,6 +1373,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     );
   }
 
+  // Details dialog
   void _showJobDetailsDialog(Map<String, dynamic> job) {
     final String jobId = job['id'] ?? 'Unknown ID';
     final String title = job['jobTitle'] ?? 'Untitled Job';
@@ -1561,7 +1575,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                                 onPressed:
                                     _resumeFiles[jobId] == null
                                         ? null
-                                        : () => _submitResume(jobId),
+                                        : () => _submitResume(job),
                                 style: ElevatedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor: Colors.green,
