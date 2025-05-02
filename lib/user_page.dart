@@ -6,7 +6,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'services/resume_analyzer.dart'; // Add this import
 
 class JobOpeningsPage extends StatefulWidget {
   @override
@@ -163,38 +162,10 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       );
 
       // Use the updated ResumeAnalyzer to analyze the resume
-      final analysisResult = await ResumeAnalyzer.analyzeResume(
-        resumeFile.bytes!,
-      );
 
       // Check if there's an error in the result
-      if (analysisResult.containsKey('error')) {
-        throw Exception(analysisResult['error']);
-      }
-
-      // Calculate grade and likelihood for better user feedback
-      int overallScore = analysisResult['overall_score'] ?? 0;
-      String grade = ResumeAnalyzer.calculateGrade(overallScore);
-      String likelihood = ResumeAnalyzer.getSelectionLikelihood(overallScore);
-
-      // Print the response to console for debugging
-      print('Resume Analysis Result:');
-      print(analysisResult);
 
       // Save analysis results to Firestore with additional metadata
-      await _firestore.collection('resume_analysis_results').add({
-        'jobId': jobId,
-        'jobTitle': job['jobTitle'],
-        'analysisResult': analysisResult,
-        'submittedAt': FieldValue.serverTimestamp(),
-        'overallScore': overallScore,
-        'grade': grade,
-        'selectionLikelihood': likelihood,
-        'candidateName': analysisResult['personal_info']?['name'] ?? 'Unknown',
-        'candidateEmail':
-            analysisResult['personal_info']?['email'] ?? 'Unknown',
-        'fileName': resumeFile.name,
-      });
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
