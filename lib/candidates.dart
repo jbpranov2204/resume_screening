@@ -2,6 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:fl_chart/fl_chart.dart'; // Add this dependency for charts
+import 'candidates_details.dart'; // Import the new details page
+
+// Define a professional theme class for consistent styling
+class AppTheme {
+  static const Color primaryColor = Color(0xFF3498DB);
+  static const Color secondaryColor = Color(0xFFFFD700);
+  static const Color backgroundColor = Color(0xFF121212);
+  static const Color cardColor = Color(0xFF1E2330);
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Color(0xFFB0BEC5);
+  static const Color successColor = Color(0xFF2ECC71);
+  static const Color warningColor = Color(0xFFF39C12);
+  static const Color errorColor = Color(0xFFE74C3C);
+
+  static TextStyle headingStyle = GoogleFonts.montserrat(
+    color: textPrimary,
+    fontWeight: FontWeight.w700,
+    fontSize: 20,
+  );
+
+  static TextStyle subheadingStyle = GoogleFonts.montserrat(
+    color: textPrimary,
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+  );
+
+  static TextStyle bodyStyle = GoogleFonts.montserrat(
+    color: textSecondary,
+    fontSize: 14,
+  );
+}
 
 class CandidatesPage extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -343,6 +375,868 @@ class CandidatesPage extends StatelessWidget {
     );
   }
 
+  // New method to build score visualization
+  Widget _buildScoreVisualization(double score, List<dynamic> scoreBreakdown) {
+    final Color scoreColor =
+        score > 70
+            ? AppTheme.successColor
+            : (score > 50 ? AppTheme.warningColor : AppTheme.errorColor);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Overall score gauge
+        Container(
+          height: 120,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.cardColor.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              // Circular progress indicator for score
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: score / 100,
+                      strokeWidth: 10,
+                      backgroundColor: Colors.grey.shade800,
+                      valueColor: AlwaysStoppedAnimation<Color>(scoreColor),
+                    ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${score.toInt()}%',
+                          style: GoogleFonts.montserrat(
+                            color: scoreColor,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Score',
+                          style: GoogleFonts.montserrat(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 20),
+              // Score interpretation
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      score > 70
+                          ? 'Excellent Match'
+                          : (score > 50 ? 'Good Potential' : 'Not Recommended'),
+                      style: GoogleFonts.montserrat(
+                        color: scoreColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      score > 70
+                          ? 'This candidate is highly suitable for the position.'
+                          : (score > 50
+                              ? 'This candidate shows potential but may need development.'
+                              : 'This candidate is not recommended for this position.'),
+                      style: GoogleFonts.montserrat(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Score breakdown chart (if available)
+        if (scoreBreakdown.isNotEmpty) ...[
+          SizedBox(height: 20),
+          Text('Score Breakdown', style: AppTheme.subheadingStyle),
+          SizedBox(height: 10),
+          Container(
+            height: 200,
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.cardColor.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: 100,
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        // Get short category names
+                        String text = '';
+                        if (value < scoreBreakdown.length) {
+                          String category =
+                              scoreBreakdown[value.toInt()]['category']
+                                  ?.toString() ??
+                              '';
+                          text =
+                              category.length > 5
+                                  ? category.substring(0, 5)
+                                  : category;
+                        }
+                        return SideTitleWidget(
+                          axisSide: meta.axisSide,
+                          child: Text(
+                            text,
+                            style: GoogleFonts.montserrat(
+                              color: AppTheme.textSecondary,
+                              fontSize: 10,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 20,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: GoogleFonts.montserrat(
+                            color: AppTheme.textSecondary,
+                            fontSize: 10,
+                          ),
+                        );
+                      },
+                      reservedSize: 28,
+                    ),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: List.generate(
+                  scoreBreakdown.length > 5 ? 5 : scoreBreakdown.length,
+                  (index) {
+                    final item = scoreBreakdown[index];
+                    final score =
+                        item['score'] is num
+                            ? (item['score'] as num).toDouble()
+                            : 0.0;
+                    final max =
+                        item['max'] is num
+                            ? (item['max'] as num).toDouble()
+                            : 100.0;
+
+                    // Convert to percentage if max is not 100
+                    final percentage = max != 0 ? (score / max * 100) : 0.0;
+
+                    return BarChartGroupData(
+                      x: index,
+                      barRods: [
+                        BarChartRodData(
+                          toY: percentage,
+                          color:
+                              percentage > 70
+                                  ? AppTheme.successColor
+                                  : (percentage > 50
+                                      ? AppTheme.warningColor
+                                      : AppTheme.errorColor),
+                          borderRadius: BorderRadius.circular(4),
+                          width: 20,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // Helper method to build an info card for candidate details
+  Widget _buildInfoCard(String title, List<Widget> children) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.montserrat(
+              color: AppTheme.primaryColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          Divider(color: Colors.grey.shade800, height: 24),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  // Helper method to build detail items with icons
+  Widget _buildDetailItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.secondaryColor, size: 18),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.montserrat(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.montserrat(color: AppTheme.textPrimary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Replace the old detail page with improved UI
+  Widget _buildCandidateDetailView(
+    BuildContext context,
+    String name,
+    String email,
+    String phone,
+    String about,
+    String github,
+    String linkedin,
+    String jobTitle,
+    String company,
+    String submittedDate,
+    String experienceSummary,
+    String grade,
+    List<dynamic> improvementSuggestions,
+    List<dynamic> skills,
+    List<dynamic> scoreBreakdown,
+    double score,
+    String likelihood,
+    int probability,
+    String selectionReason,
+  ) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with candidate name and actions
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryColor,
+                  AppTheme.primaryColor.withOpacity(0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.white,
+                      radius: 24,
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                        style: GoogleFonts.montserrat(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                          Text(
+                            jobTitle,
+                            style: GoogleFonts.montserrat(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    if (email.isNotEmpty)
+                      _buildContactButton(
+                        'Email',
+                        Icons.email,
+                        () => _sendEmail(email, name, context),
+                      ),
+                    if (phone.isNotEmpty)
+                      _buildContactButton(
+                        'Call',
+                        Icons.phone,
+                        () => launchUrl(Uri.parse('tel:$phone')),
+                      ),
+                    if (linkedin.isNotEmpty)
+                      _buildContactButton(
+                        'LinkedIn',
+                        Icons.work,
+                        () => launchUrl(Uri.parse(linkedin)),
+                      ),
+                    if (github.isNotEmpty)
+                      _buildContactButton(
+                        'GitHub',
+                        Icons.code,
+                        () => launchUrl(Uri.parse(github)),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 24),
+
+          // Score visualization section
+          _buildScoreVisualization(score, scoreBreakdown),
+
+          SizedBox(height: 24),
+
+          // Personal Information
+          _buildInfoCard('Personal Information', [
+            if (email.isNotEmpty) _buildDetailItem(Icons.email, 'Email', email),
+            if (phone.isNotEmpty) _buildDetailItem(Icons.phone, 'Phone', phone),
+            if (about.isNotEmpty)
+              _buildDetailItem(Icons.person, 'About', about),
+            _buildDetailItem(Icons.business, 'Company', company),
+            _buildDetailItem(Icons.calendar_today, 'Submitted', submittedDate),
+          ]),
+
+          // Experience
+          if (experienceSummary.isNotEmpty)
+            _buildInfoCard('Experience', [
+              _buildDetailItem(
+                Icons.work_history,
+                'Summary',
+                experienceSummary,
+              ),
+            ]),
+
+          // Skills
+          if (skills.isNotEmpty)
+            _buildInfoCard('Skills', [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    skills.map((skill) {
+                      return Chip(
+                        label: Text(
+                          skill.toString(),
+                          style: GoogleFonts.montserrat(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      );
+                    }).toList(),
+              ),
+            ]),
+
+          // Assessment
+          if (grade.isNotEmpty || improvementSuggestions.isNotEmpty)
+            _buildInfoCard('Assessment', [
+              if (grade.isNotEmpty)
+                _buildDetailItem(Icons.grade, 'Grade', grade),
+              if (improvementSuggestions.isNotEmpty) ...[
+                SizedBox(height: 8),
+                Text(
+                  'Improvement Suggestions',
+                  style: GoogleFonts.montserrat(
+                    color: AppTheme.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 8),
+                ...improvementSuggestions.map(
+                  (suggestion) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.arrow_right,
+                          color: AppTheme.warningColor,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            suggestion.toString(),
+                            style: GoogleFonts.montserrat(
+                              color: AppTheme.textPrimary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ]),
+
+          // Selection Prediction
+          if (likelihood.isNotEmpty)
+            _buildInfoCard('Selection Prediction', [
+              _buildDetailItem(
+                Icons.analytics,
+                'Likelihood',
+                '$likelihood ($probability%)',
+              ),
+              if (selectionReason.isNotEmpty)
+                _buildDetailItem(Icons.info_outline, 'Reason', selectionReason),
+            ]),
+
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  // Helper for contact buttons
+  Widget _buildContactButton(String label, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppTheme.primaryColor, size: 18),
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.montserrat(color: Colors.white, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Replace the _buildMobileCandidatesList method to navigate to the details page instead of showing bottom sheet
+  Widget _buildMobileCandidatesList(
+    List<Map<String, dynamic>> candidates,
+    BuildContext context,
+  ) {
+    return ListView.builder(
+      itemCount: candidates.length,
+      itemBuilder: (context, index) {
+        final candidate = candidates[index];
+        final analysis =
+            candidate['analysis'] is Map
+                ? Map<String, dynamic>.from(candidate['analysis'])
+                : <String, dynamic>{};
+
+        // Extract all fields from Firestore data
+        final personalInfo =
+            analysis['personal_info'] is Map
+                ? Map<String, dynamic>.from(analysis['personal_info'])
+                : <String, dynamic>{};
+        final String name =
+            personalInfo['name']?.toString() ??
+            analysis['name']?.toString() ??
+            'Unknown';
+        final String email =
+            personalInfo['email']?.toString() ??
+            analysis['mail']?.toString() ??
+            '';
+        final String phone = personalInfo['phone']?.toString() ?? '';
+        final String about = personalInfo['about']?.toString() ?? '';
+        final String github = personalInfo['github']?.toString() ?? '';
+        final String linkedin = personalInfo['linkedin']?.toString() ?? '';
+
+        final String experienceSummary =
+            analysis['experience_summary']?.toString() ?? '';
+        final String grade = analysis['grade']?.toString() ?? '';
+        final List<dynamic> improvementSuggestions =
+            analysis['improvement_suggestions'] is List
+                ? List<dynamic>.from(analysis['improvement_suggestions'])
+                : <dynamic>[];
+        final double score =
+            analysis['overall_score'] is num
+                ? (analysis['overall_score'] as num).toDouble()
+                : analysis['score'] is num
+                ? (analysis['score'] as num).toDouble()
+                : 0.0;
+        final List<dynamic> scoreBreakdown =
+            analysis['score_breakdown'] is List
+                ? List<dynamic>.from(analysis['score_breakdown'])
+                : <dynamic>[];
+        final selectionPrediction =
+            analysis['selection_prediction'] is Map
+                ? Map<String, dynamic>.from(analysis['selection_prediction'])
+                : <String, dynamic>{};
+        final String likelihood =
+            selectionPrediction['likelihood']?.toString() ?? '';
+        final int probability =
+            selectionPrediction['probability'] is num
+                ? (selectionPrediction['probability'] as num).toInt()
+                : 0;
+        final String selectionReason =
+            selectionPrediction['reason']?.toString() ?? '';
+        final List<dynamic> skills =
+            analysis['skills'] is List
+                ? List<dynamic>.from(analysis['skills'])
+                : <dynamic>[];
+
+        // Job and document details
+        final String jobTitle =
+            candidate['jobTitle']?.toString() ?? 'Unknown Position';
+        final String company =
+            candidate['company']?.toString() ?? 'Unknown Company';
+
+        // Format timestamp if available
+        String submittedDate = 'Unknown date';
+        if (candidate['timestamp'] != null) {
+          try {
+            final timestamp = candidate['timestamp'] as Timestamp;
+            final dateTime = timestamp.toDate();
+            submittedDate =
+                '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+          } catch (e) {
+            print('Error formatting timestamp: $e');
+          }
+        }
+
+        final Color scoreColor =
+            score > 70
+                ? AppTheme.successColor
+                : (score > 50 ? AppTheme.warningColor : AppTheme.errorColor);
+
+        return Card(
+          margin: EdgeInsets.only(bottom: 16),
+          color: AppTheme.cardColor,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: InkWell(
+            onTap: () {
+              // Navigate to detailed page instead of showing bottom sheet
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder:
+                      (context) => CandidateDetailsPage(
+                        name: name,
+                        email: email,
+                        phone: phone,
+                        about: about,
+                        github: github,
+                        linkedin: linkedin,
+                        jobTitle: jobTitle,
+                        company: company,
+                        submittedDate: submittedDate,
+                        experienceSummary: experienceSummary,
+                        grade: grade,
+                        improvementSuggestions: improvementSuggestions,
+                        skills: skills,
+                        scoreBreakdown: scoreBreakdown,
+                        score: score,
+                        likelihood: likelihood,
+                        probability: probability,
+                        selectionReason: selectionReason,
+                        sendEmail: _sendEmail,
+                      ),
+                ),
+              );
+            },
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : '?',
+                            style: GoogleFonts.montserrat(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: GoogleFonts.montserrat(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              jobTitle,
+                              style: GoogleFonts.montserrat(
+                                color: AppTheme.textSecondary,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Simple animated circular progress indicator
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: score / 100),
+                        duration: Duration(milliseconds: 1000),
+                        builder: (context, double value, child) {
+                          return Container(
+                            width: 50,
+                            height: 50,
+                            child: Stack(
+                              children: [
+                                CircularProgressIndicator(
+                                  value: value,
+                                  strokeWidth: 6,
+                                  backgroundColor: Colors.grey.shade800,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    scoreColor,
+                                  ),
+                                ),
+                                Center(
+                                  child: Text(
+                                    '${score.toInt()}%',
+                                    style: GoogleFonts.montserrat(
+                                      color: scoreColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16),
+                  // Company and submission info
+                  Row(
+                    children: [
+                      Expanded(child: _buildInfoTag(Icons.business, company)),
+                      Expanded(
+                        child: _buildInfoTag(
+                          Icons.calendar_today,
+                          submittedDate,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  // Contact info
+                  if (email.isNotEmpty || phone.isNotEmpty)
+                    Row(
+                      children: [
+                        if (email.isNotEmpty)
+                          Expanded(child: _buildInfoTag(Icons.email, email)),
+                        if (phone.isNotEmpty)
+                          Expanded(child: _buildInfoTag(Icons.phone, phone)),
+                      ],
+                    ),
+
+                  // Skills preview (limited to 3)
+                  if (skills.isNotEmpty) ...[
+                    SizedBox(height: 16),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children:
+                          skills
+                              .take(3)
+                              .map(
+                                (skill) => Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor.withOpacity(
+                                      0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    skill.toString(),
+                                    style: GoogleFonts.montserrat(
+                                      color: AppTheme.primaryColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                    ),
+                    if (skills.length > 3)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          '+ ${skills.length - 3} more skills',
+                          style: GoogleFonts.montserrat(
+                            color: AppTheme.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Tap to see details',
+                        style: GoogleFonts.montserrat(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Small info tag helper
+  Widget _buildInfoTag(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppTheme.textSecondary),
+        SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.montserrat(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Also update the web view for consistency
   Widget _buildWebCandidatesList(
     List<Map<String, dynamic>> candidates,
     BuildContext context,
@@ -519,8 +1413,10 @@ class CandidatesPage extends StatelessWidget {
 
                 final Color scoreColor =
                     score > 70
-                        ? Colors.green
-                        : (score > 50 ? Colors.orange : Colors.red);
+                        ? AppTheme.successColor
+                        : (score > 50
+                            ? AppTheme.warningColor
+                            : AppTheme.errorColor);
 
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -639,224 +1535,33 @@ class CandidatesPage extends StatelessWidget {
                             IconButton(
                               icon: Icon(Icons.visibility, color: Colors.green),
                               onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (ctx) => AlertDialog(
-                                        backgroundColor: Color.fromARGB(
-                                          255,
-                                          20,
-                                          30,
-                                          40,
+                                // Replace dialog with navigation to the details page
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => CandidateDetailsPage(
+                                          name: name,
+                                          email: email,
+                                          phone: phone,
+                                          about: about,
+                                          github: github,
+                                          linkedin: linkedin,
+                                          jobTitle: jobTitle,
+                                          company: company,
+                                          submittedDate: submittedDate,
+                                          experienceSummary: experienceSummary,
+                                          grade: grade,
+                                          improvementSuggestions:
+                                              improvementSuggestions,
+                                          skills: skills,
+                                          scoreBreakdown: scoreBreakdown,
+                                          score: score,
+                                          likelihood: likelihood,
+                                          probability: probability,
+                                          selectionReason: selectionReason,
+                                          sendEmail: _sendEmail,
                                         ),
-                                        title: Text(
-                                          'Candidate Details',
-                                          style: GoogleFonts.montserrat(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        content: SingleChildScrollView(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Name: $name',
-                                                style: GoogleFonts.montserrat(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              if (email.isNotEmpty)
-                                                Text(
-                                                  'Email: $email',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (phone.isNotEmpty)
-                                                Text(
-                                                  'Phone: $phone',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (about.isNotEmpty)
-                                                Text(
-                                                  'About: $about',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (github.isNotEmpty)
-                                                Text(
-                                                  'GitHub: $github',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (linkedin.isNotEmpty)
-                                                Text(
-                                                  'LinkedIn: $linkedin',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              SizedBox(height: 8),
-                                              Text(
-                                                'Job Title: $jobTitle',
-                                                style: GoogleFonts.montserrat(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                'Company: $company',
-                                                style: GoogleFonts.montserrat(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-
-                                              Text(
-                                                'Submitted: $submittedDate',
-                                                style: GoogleFonts.montserrat(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              SizedBox(height: 8),
-                                              if (experienceSummary.isNotEmpty)
-                                                Text(
-                                                  'Experience Summary:\n$experienceSummary',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (grade.isNotEmpty)
-                                                Text(
-                                                  'Grade: $grade',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (improvementSuggestions
-                                                  .isNotEmpty)
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Improvement Suggestions:',
-                                                      style:
-                                                          GoogleFonts.montserrat(
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                    ...improvementSuggestions.map(
-                                                      (s) => Text(
-                                                        '- $s',
-                                                        style:
-                                                            GoogleFonts.montserrat(
-                                                              color:
-                                                                  Colors
-                                                                      .grey[300],
-                                                            ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              SizedBox(height: 8),
-                                              if (skills.isNotEmpty)
-                                                Wrap(
-                                                  spacing: 6,
-                                                  children:
-                                                      skills
-                                                          .map(
-                                                            (s) => Chip(
-                                                              label: Text(
-                                                                s.toString(),
-                                                                style: GoogleFonts.montserrat(
-                                                                  color:
-                                                                      Colors
-                                                                          .white,
-                                                                ),
-                                                              ),
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .blueGrey,
-                                                            ),
-                                                          )
-                                                          .toList(),
-                                                ),
-                                              SizedBox(height: 8),
-                                              if (scoreBreakdown.isNotEmpty)
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Score Breakdown:',
-                                                      style:
-                                                          GoogleFonts.montserrat(
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                    ...scoreBreakdown.map((sb) {
-                                                      final cat =
-                                                          sb['category'] ?? '';
-                                                      final scr =
-                                                          sb['score'] ?? '';
-                                                      final max =
-                                                          sb['max'] ?? '';
-                                                      final comments =
-                                                          sb['comments'] ?? '';
-                                                      return Padding(
-                                                        padding:
-                                                            const EdgeInsets.only(
-                                                              bottom: 4.0,
-                                                            ),
-                                                        child: Text(
-                                                          '$cat: $scr/$max\nComments: $comments',
-                                                          style: GoogleFonts.montserrat(
-                                                            color:
-                                                                Colors
-                                                                    .grey[300],
-                                                            fontSize: 12,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }),
-                                                  ],
-                                                ),
-                                              SizedBox(height: 8),
-                                              if (likelihood.isNotEmpty)
-                                                Text(
-                                                  'Selection Prediction: $likelihood ($probability%)',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              if (selectionReason.isNotEmpty)
-                                                Text(
-                                                  'Reason: $selectionReason',
-                                                  style: GoogleFonts.montserrat(
-                                                    color: Colors.grey[300],
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            child: Text(
-                                              'Close',
-                                              style: GoogleFonts.montserrat(
-                                                color: Colors.blue,
-                                              ),
-                                            ),
-                                            onPressed:
-                                                () => Navigator.of(ctx).pop(),
-                                          ),
-                                        ],
-                                      ),
+                                  ),
                                 );
                               },
                               tooltip: 'View Details',
@@ -882,418 +1587,6 @@ class CandidatesPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildMobileCandidatesList(
-    List<Map<String, dynamic>> candidates,
-    BuildContext context,
-  ) {
-    return ListView.builder(
-      itemCount: candidates.length,
-      itemBuilder: (context, index) {
-        final candidate = candidates[index];
-        final analysis =
-            candidate['analysis'] is Map
-                ? Map<String, dynamic>.from(candidate['analysis'])
-                : <String, dynamic>{};
-
-        // Extract all fields from Firestore data
-        final personalInfo =
-            analysis['personal_info'] is Map
-                ? Map<String, dynamic>.from(analysis['personal_info'])
-                : <String, dynamic>{};
-        final String name =
-            personalInfo['name']?.toString() ??
-            analysis['name']?.toString() ??
-            'Unknown';
-        final String email =
-            personalInfo['email']?.toString() ??
-            analysis['mail']?.toString() ??
-            '';
-        final String phone = personalInfo['phone']?.toString() ?? '';
-        final String about = personalInfo['about']?.toString() ?? '';
-        final String github = personalInfo['github']?.toString() ?? '';
-        final String linkedin = personalInfo['linkedin']?.toString() ?? '';
-
-        final String experienceSummary =
-            analysis['experience_summary']?.toString() ?? '';
-        final String grade = analysis['grade']?.toString() ?? '';
-        final List<dynamic> improvementSuggestions =
-            analysis['improvement_suggestions'] is List
-                ? List<dynamic>.from(analysis['improvement_suggestions'])
-                : <dynamic>[];
-        final double score =
-            analysis['overall_score'] is num
-                ? (analysis['overall_score'] as num).toDouble()
-                : analysis['score'] is num
-                ? (analysis['score'] as num).toDouble()
-                : 0.0;
-        final List<dynamic> scoreBreakdown =
-            analysis['score_breakdown'] is List
-                ? List<dynamic>.from(analysis['score_breakdown'])
-                : <dynamic>[];
-        final selectionPrediction =
-            analysis['selection_prediction'] is Map
-                ? Map<String, dynamic>.from(analysis['selection_prediction'])
-                : <String, dynamic>{};
-        final String likelihood =
-            selectionPrediction['likelihood']?.toString() ?? '';
-        final int probability =
-            selectionPrediction['probability'] is num
-                ? (selectionPrediction['probability'] as num).toInt()
-                : 0;
-        final String selectionReason =
-            selectionPrediction['reason']?.toString() ?? '';
-        final List<dynamic> skills =
-            analysis['skills'] is List
-                ? List<dynamic>.from(analysis['skills'])
-                : <dynamic>[];
-
-        // Job and document details
-        final String jobTitle =
-            candidate['jobTitle']?.toString() ?? 'Unknown Position';
-        final String company =
-            candidate['company']?.toString() ?? 'Unknown Company';
-        
-
-        // Format timestamp if available
-        String submittedDate = 'Unknown date';
-        if (candidate['timestamp'] != null) {
-          try {
-            final timestamp = candidate['timestamp'] as Timestamp;
-            final dateTime = timestamp.toDate();
-            submittedDate =
-                '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-          } catch (e) {
-            print('Error formatting timestamp: $e');
-          }
-        }
-
-        final Color scoreColor =
-            score > 70
-                ? Colors.green
-                : (score > 50 ? Colors.orange : Colors.red);
-
-        return Card(
-          margin: EdgeInsets.only(bottom: 16),
-          color: Color.fromARGB(255, 20, 30, 40),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scoreColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${score.toStringAsFixed(0)}%',
-                        style: GoogleFonts.montserrat(
-                          color: scoreColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            jobTitle,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.grey[400],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            company,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.grey[400],
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (email.isNotEmpty) ...[
-                  SizedBox(height: 8),
-                  Text(
-                    email,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-                if (phone.isNotEmpty)
-                  Text(
-                    phone,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
-                  ),
-                SizedBox(height: 4),
-                Row(
-                  children: [
-                    
-                    Text(
-                      'Submitted: $submittedDate',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.grey[500],
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildMobileActionButton('View', Icons.visibility, Colors.blue, () {
-                      showModalBottomSheet(
-                        context: context,
-                        backgroundColor: Color.fromARGB(255, 20, 30, 40),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
-                        ),
-                        builder:
-                            (ctx) => Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Name: $name',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    if (email.isNotEmpty)
-                                      Text(
-                                        'Email: $email',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (phone.isNotEmpty)
-                                      Text(
-                                        'Phone: $phone',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (about.isNotEmpty)
-                                      Text(
-                                        'About: $about',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (github.isNotEmpty)
-                                      Text(
-                                        'GitHub: $github',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (linkedin.isNotEmpty)
-                                      Text(
-                                        'LinkedIn: $linkedin',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Job Title: $jobTitle',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Company: $company',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    
-                                    Text(
-                                      'Submitted: $submittedDate',
-                                      style: GoogleFonts.montserrat(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    if (experienceSummary.isNotEmpty)
-                                      Text(
-                                        'Experience Summary:\n$experienceSummary',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (grade.isNotEmpty)
-                                      Text(
-                                        'Grade: $grade',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (improvementSuggestions.isNotEmpty)
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Improvement Suggestions:',
-                                            style: GoogleFonts.montserrat(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          ...improvementSuggestions.map(
-                                            (s) => Text(
-                                              '- $s',
-                                              style: GoogleFonts.montserrat(
-                                                color: Colors.grey[300],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    SizedBox(height: 8),
-                                    if (skills.isNotEmpty)
-                                      Wrap(
-                                        spacing: 6,
-                                        children:
-                                            skills
-                                                .map(
-                                                  (s) => Chip(
-                                                    label: Text(
-                                                      s.toString(),
-                                                      style:
-                                                          GoogleFonts.montserrat(
-                                                            color: Colors.white,
-                                                          ),
-                                                    ),
-                                                    backgroundColor:
-                                                        Colors.blueGrey,
-                                                  ),
-                                                )
-                                                .toList(),
-                                      ),
-                                    SizedBox(height: 8),
-                                    if (scoreBreakdown.isNotEmpty)
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Score Breakdown:',
-                                            style: GoogleFonts.montserrat(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          ...scoreBreakdown.map((sb) {
-                                            final cat = sb['category'] ?? '';
-                                            final scr = sb['score'] ?? '';
-                                            final max = sb['max'] ?? '';
-                                            final comments =
-                                                sb['comments'] ?? '';
-                                            return Padding(
-                                              padding: const EdgeInsets.only(
-                                                bottom: 4.0,
-                                              ),
-                                              child: Text(
-                                                '$cat: $scr/$max\nComments: $comments',
-                                                style: GoogleFonts.montserrat(
-                                                  color: Colors.grey[300],
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            );
-                                          }),
-                                        ],
-                                      ),
-                                    SizedBox(height: 8),
-                                    if (likelihood.isNotEmpty)
-                                      Text(
-                                        'Selection Prediction: $likelihood ($probability%)',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    if (selectionReason.isNotEmpty)
-                                      Text(
-                                        'Reason: $selectionReason',
-                                        style: GoogleFonts.montserrat(
-                                          color: Colors.grey[300],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                      );
-                    }),
-                    if (email.isNotEmpty)
-                      _buildMobileActionButton(
-                        'Email',
-                        Icons.mail_outline,
-                        Colors.green,
-                        () => _sendEmail(email, name, context),
-                      ),
-                    _buildMobileActionButton(
-                      'Delete',
-                      Icons.delete_outline,
-                      Colors.red,
-                      () {
-                        // Delete candidate
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
