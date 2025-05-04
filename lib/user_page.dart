@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:dio/dio.dart'; // Add this import for Dio
 
 class JobOpeningsPage extends StatefulWidget {
   @override
@@ -75,145 +76,114 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
 
   // Add this method for resume analysis
   Future<Map<String, dynamic>> _analyzeResume(PlatformFile resumeFile) async {
-    int retryCount = 0;
-    const maxRetries = 2; // Maximum number of retry attempts
+    // Show immediate feedback to user
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Processing your resume...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
 
-    while (retryCount <= maxRetries) {
-      try {
-        // Log file information for debugging
-        print(
-          'Analyzing resume: ${resumeFile.name}, Size: ${resumeFile.size} bytes',
-        );
+    try {
+      // Log file information for debugging
+      print('Analyzing resume: ${resumeFile.name}, Size: ${resumeFile.size} bytes');
 
-        // Create a multipart request to the resume analysis API
-        var request = http.MultipartRequest(
-          'POST',
-          Uri.parse(
-            'https://resume-2kvb.onrender.com/',
-          ), // Updated endpoint with explicit 'analyze' path
-        );
+      // Create Dio instance with base options
+      final dio = Dio(BaseOptions(
+        baseUrl: 'https://resume-2kvb.onrender.com/',
+        connectTimeout: Duration(seconds: 15),
+        receiveTimeout: Duration(seconds: 15),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+      ));
 
-        if (kIsWeb) {
-          // Web platform handling
-          final bytes = resumeFile.bytes;
-          final filename = resumeFile.name;
-          if (bytes != null) {
-            print('Uploading web file: $filename, ${bytes.length} bytes');
-            request.files.add(
-              http.MultipartFile.fromBytes('file', bytes, filename: filename),
-            );
-          } else {
-            throw Exception(
-              "Resume file bytes are null. Please upload a valid resume.",
-            );
-          }
+      // Create FormData object
+      FormData formData;
+      
+      if (kIsWeb) {
+        // Web platform handling
+        final bytes = resumeFile.bytes;
+        final filename = resumeFile.name;
+        if (bytes != null) {
+          print('Uploading web file: $filename, ${bytes.length} bytes');
+          formData = FormData.fromMap({
+            'file': MultipartFile.fromBytes(bytes, filename: filename),
+          });
         } else {
-          // Mobile/Desktop platform handling
-          String? filePath = resumeFile.path;
-          if (filePath != null) {
-            print('Uploading native file from path: $filePath');
-            request.files.add(
-              await http.MultipartFile.fromPath('file', filePath),
-            );
-          } else {
-            throw Exception(
-              "Resume file path is null. Please upload a valid resume.",
-            );
-          }
+          throw Exception("Resume file bytes are null. Please upload a valid resume.");
         }
-
-        // Add headers to ensure proper content handling
-        request.headers['Accept'] = 'application/json';
-        request.headers['Content-Type'] = 'multipart/form-data';
-
-        print('Sending request to server...');
-
-        // Send the request with timeout
-        var streamedResponse = await request.send().timeout(
-          const Duration(seconds: 45), // Increased timeout
-          onTimeout:
-              () =>
-                  throw TimeoutException(
-                    'Connection timed out after 45 seconds',
-                  ),
-        );
-
-        var response = await http.Response.fromStream(streamedResponse);
-
-        // Print detailed response information
-        print('API Response Status: ${response.statusCode}');
-        print('API Response Headers: ${response.headers}');
-        print(
-          'API Response Body: ${response.body.length > 500 ? response.body.substring(0, 500) + "..." : response.body}',
-        );
-
-        if (response.statusCode == 200) {
-          try {
-            var jsonResponse = jsonDecode(response.body);
-
-            // Return the analysis result
-            if (jsonResponse['analysis'] is Map) {
-              return jsonResponse['analysis'] as Map<String, dynamic>;
-            } else if (jsonResponse['analysis'] is String) {
-              // Parse the analysis string into a Map if it's a JSON string
-              try {
-                return jsonDecode(jsonResponse['analysis'])
-                    as Map<String, dynamic>;
-              } catch (e) {
-                print('Error parsing analysis JSON string: $e');
-                return {
-                  'error':
-                      'Could not parse analysis: ${jsonResponse['analysis']}',
-                };
-              }
-            } else {
-              return {'error': 'Invalid analysis format'};
-            }
-          } catch (e) {
-            print('Error parsing response JSON: $e');
-            return {'error': 'Failed to parse response: $e'};
-          }
-        } else if (response.statusCode == 500 && retryCount < maxRetries) {
-          // Retry on server error (500)
-          print('Server error, retrying (${retryCount + 1}/$maxRetries)...');
-          retryCount++;
-          await Future.delayed(Duration(seconds: 2)); // Wait before retrying
-          continue;
+      } else {
+        // Mobile/Desktop platform handling
+        String? filePath = resumeFile.path;
+        if (filePath != null) {
+          print('Uploading native file from path: $filePath');
+          formData = FormData.fromMap({
+            'file': await MultipartFile.fromFile(filePath, filename: resumeFile.name),
+          });
         } else {
-          var errorBody = 'No response body';
-          try {
-            // Try to parse the error response as JSON for more details
-            var errorJson = jsonDecode(response.body);
-            errorBody = errorJson['error'] ?? response.body;
-          } catch (e) {
-            errorBody = response.body;
-          }
-
-          return {
-            'error':
-                'Server error: ${response.statusCode}\nDetails: $errorBody',
-          };
+          throw Exception("Resume file path is null. Please upload a valid resume.");
         }
-      } catch (e) {
-        if (e is TimeoutException && retryCount < maxRetries) {
-          print(
-            'Request timed out, retrying (${retryCount + 1}/$maxRetries)...',
-          );
-          retryCount++;
-          await Future.delayed(Duration(seconds: 2)); // Wait before retrying
-          continue;
-        }
-
-        print('Error during resume analysis: $e');
-        return {'error': 'Connection error: $e'};
       }
-    }
 
-    // This will be reached if all retries are used up
-    return {'error': 'Failed to analyze resume after multiple attempts'};
+      print('Sending request to server...');
+      
+      // Send the request with Dio
+      final response = await dio.post(
+        '/', 
+        data: formData,
+        onSendProgress: (sent, total) {
+          print('Upload progress: ${(sent / total * 100).toStringAsFixed(2)}%');
+        },
+      );
+
+      print('API Response Status: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        
+        // Return the analysis result
+        if (data['analysis'] is Map) {
+          return data['analysis'] as Map<String, dynamic>;
+        } else if (data['analysis'] is String) {
+          // Parse the analysis string into a Map if it's a JSON string
+          try {
+            return jsonDecode(data['analysis']) as Map<String, dynamic>;
+          } catch (e) {
+            print('Error parsing analysis JSON string: $e');
+            return {
+              'error': 'Could not parse analysis: ${data['analysis']}',
+            };
+          }
+        } else {
+          return {'error': 'Invalid analysis format'};
+        }
+      } else {
+        return {
+          'error': 'Server error: ${response.statusCode}\nDetails: ${response.data}',
+        };
+      }
+    } on DioException catch (e) {
+      print('Dio error during resume analysis: ${e.message}');
+      String errorMsg = 'Network error';
+      
+      if (e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMsg = 'Connection timed out. Server might be busy.';
+      } else if (e.response != null) {
+        errorMsg = 'Server error: ${e.response?.statusCode}';
+      }
+      
+      return {'error': errorMsg};
+    } catch (e) {
+      print('Error during resume analysis: $e');
+      return {'error': 'Error: $e'};
+    }
   }
 
-  // Modified _submitResume to use the resume analyzer and store results in Firestore
+  // Modified _submitResume to use the updated resume analyzer
   Future<void> _submitResume(Map<String, dynamic> job) async {
     final String jobId = job['id'] as String;
     if (_resumeFiles[jobId] == null) {
@@ -237,15 +207,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         throw Exception("Resume file is empty. Please upload a valid resume.");
       }
 
-      // Show a message that analysis is in progress
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Analyzing your resume... This may take a moment.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-
-      // Use the updated ResumeAnalyzer to analyze the resume
+      // Use the updated resume analyzer with Dio
       final analysisResult = await _analyzeResume(resumeFile);
 
       // Check if there's an error in the result
@@ -270,7 +232,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             'Resume analyzed and submitted successfully for ${job['jobTitle']}',
           ),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 4),
+          duration: Duration(seconds: 3),
         ),
       );
     } catch (e) {
@@ -279,7 +241,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         SnackBar(
           content: Text('Failed to analyze resume: ${e.toString()}'),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 4),
+          duration: Duration(seconds: 3),
         ),
       );
     } finally {
@@ -1131,7 +1093,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             ),
           ),
         ),
-      ),
+      )
     );
   }
 
