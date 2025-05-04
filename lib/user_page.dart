@@ -88,16 +88,25 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       // Log file information for debugging
       print('Analyzing resume: ${resumeFile.name}, Size: ${resumeFile.size} bytes');
 
-      // Create Dio instance with base options
+      // Create Dio instance with base options - increasing timeouts significantly
       final dio = Dio(BaseOptions(
         baseUrl: 'https://resume-2kvb.onrender.com/',
-        connectTimeout: Duration(seconds: 15),
-        receiveTimeout: Duration(seconds: 15),
+        connectTimeout: Duration(seconds: 60),  // Increased from 15 to 60 seconds
+        receiveTimeout: Duration(seconds: 60),  // Increased from 15 to 60 seconds
+        sendTimeout: Duration(seconds: 60),     // Added send timeout of 60 seconds
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'multipart/form-data',
         },
       ));
+
+      // Show a more informative message that the server might be slow
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connecting to resume analysis server. This may take a moment...'),
+          duration: Duration(seconds: 3),
+        ),
+      );
 
       // Create FormData object
       FormData formData;
@@ -127,7 +136,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         }
       }
 
-      print('Sending request to server...');
+      print('Sending request to server with longer timeout...');
       
       // Send the request with Dio
       final response = await dio.post(
@@ -171,7 +180,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       if (e.type == DioExceptionType.connectionTimeout || 
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
-        errorMsg = 'Connection timed out. Server might be busy.';
+        errorMsg = 'The server is taking too long to respond. Please try again later.';
       } else if (e.response != null) {
         errorMsg = 'Server error: ${e.response?.statusCode}';
       }
