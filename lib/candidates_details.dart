@@ -153,19 +153,11 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                         ),
                       ),
                     ),
-                    // Pattern overlay for visual interest
-                    Opacity(
-                      opacity: 0.1,
-                      child: Image.network(
-                        'https://www.transparenttextures.com/patterns/cubes.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    // Candidate info
+                    // Candidate info - moved up with center alignment
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
@@ -396,6 +388,7 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                               return CircularProgressIndicator(
                                 value: value,
                                 strokeWidth: 10,
+
                                 backgroundColor: Colors.grey.shade800,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   scoreColor,
@@ -404,7 +397,6 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                             },
                           ),
                           Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
                                 '${widget.score.toInt()}%',
@@ -412,13 +404,6 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                                   color: scoreColor,
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'Score',
-                                style: GoogleFonts.montserrat(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -1108,6 +1093,7 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
           Text('Contact Information', style: AppTheme.headingStyle),
           SizedBox(height: 16),
 
+          // Personal Contact card
           _buildInfoCard('Personal Contact', [
             if (widget.email.isNotEmpty)
               _buildContactItem(
@@ -1165,7 +1151,7 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
 
           SizedBox(height: 20),
 
-          // Option to send an email
+          // Communication card - separate from the Personal Contact card
           if (widget.email.isNotEmpty && widget.sendEmail != null)
             _buildInfoCard('Communication', [
               ListTile(
@@ -1196,7 +1182,7 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
 
           SizedBox(height: 20),
 
-          // Company information
+          // Company information card - separate from the other cards
           _buildInfoCard('Company Information', [
             _buildDetailItem(Icons.business, 'Company', widget.company),
             _buildDetailItem(Icons.work, 'Position', widget.jobTitle),

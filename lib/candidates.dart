@@ -1087,25 +1087,33 @@ class CandidatesPage extends StatelessWidget {
                         duration: Duration(milliseconds: 1000),
                         builder: (context, double value, child) {
                           return Container(
-                            width: 50,
-                            height: 50,
+                            width: 100, // Increased from 50
+                            height: 100, // Increased from 50
                             child: Stack(
+                              alignment:
+                                  Alignment.center, // Ensure center alignment
                               children: [
                                 CircularProgressIndicator(
                                   value: value,
-                                  strokeWidth: 6,
+                                  strokeWidth: 8, // Increased from 6
                                   backgroundColor: Colors.grey.shade800,
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                     scoreColor,
                                   ),
                                 ),
-                                Center(
+                                // Better positioned percentage text
+                                Container(
+                                  padding: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.cardColor.withOpacity(0.7),
+                                    shape: BoxShape.circle,
+                                  ),
                                   child: Text(
                                     '${score.toInt()}%',
                                     style: GoogleFonts.montserrat(
                                       color: scoreColor,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 12,
+                                      fontSize: 12, // Increased from 12
                                     ),
                                   ),
                                 ),
