@@ -18,7 +18,7 @@ class ResumeAIApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Resume AI - Login',
-      home: DashboardPage(),
+      home: Responsive(),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
