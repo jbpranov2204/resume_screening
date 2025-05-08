@@ -258,6 +258,506 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  void _fetchJobDetails(String jobId) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => Center(
+              child: Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                ),
+              ),
+            ),
+      );
+
+      final doc = await _firestore.collection('jobs').doc(jobId).get();
+
+      // Dismiss loading dialog
+      Navigator.of(context).pop();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+
+        // Prepare data with defaults for safety
+        final String jobTitle = data['jobTitle'] ?? 'Untitled Job';
+        final String company = data['company'] ?? 'No Company';
+        final String location = data['location'] ?? 'Remote';
+        final String salary = data['salary'] ?? 'Competitive';
+        final String description =
+            data['jobDescription'] ?? 'No description available.';
+        final String employmentType = data['employmentType'] ?? 'Full-time';
+        final List<dynamic> requirements = data['requirements'] ?? [];
+        final List<dynamic> responsibilities = data['responsibilities'] ?? [];
+        final Timestamp? postedTimestamp = data['postedAt'];
+        final String postedDate =
+            postedTimestamp != null
+                ? DateFormat('MMMM dd, yyyy').format(postedTimestamp.toDate())
+                : 'Recently';
+        final int applicants = data['applicants'] ?? 0;
+
+        showDialog(
+          context: context,
+          builder:
+              (context) => Dialog(
+                backgroundColor: Colors.transparent,
+                insetPadding: EdgeInsets.symmetric(
+                  horizontal: _isMobileScreen ? 16 : 80,
+                  vertical: _isMobileScreen ? 16 : 40,
+                ),
+                child: _buildJobDetailsContent(
+                  jobTitle: jobTitle,
+                  company: company,
+                  location: location,
+                  salary: salary,
+                  description: description,
+                  employmentType: employmentType,
+                  requirements: requirements,
+                  responsibilities: responsibilities,
+                  postedDate: postedDate,
+                  applicants: applicants,
+                ),
+              ),
+        );
+      } else {
+        // Show error if job not found
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Job not found'), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      print('Error fetching job details: $e');
+      // Dismiss loading dialog if error occurs
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load job details'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildJobDetailsContent({
+    required String jobTitle,
+    required String company,
+    required String location,
+    required String salary,
+    required String description,
+    required String employmentType,
+    required List<dynamic> requirements,
+    required List<dynamic> responsibilities,
+    required String postedDate,
+    required int applicants,
+  }) {
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A2151), Color(0xFF0D1128)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.shade900.withOpacity(0.3),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.blue.shade700.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Background elements
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.blue.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -30,
+            left: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.purple.withOpacity(0.07),
+              ),
+            ),
+          ),
+
+          // Content
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: SingleChildScrollView(
+              physics: BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header section with job title and close button
+                  _buildDetailHeader(jobTitle, company),
+
+                  // Main content
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Job stats row
+                        _buildJobStatsRow(
+                          employmentType,
+                          location,
+                          postedDate,
+                          applicants,
+                        ),
+
+                        // Divider
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Divider(
+                            color: Colors.grey.shade700.withOpacity(0.5),
+                          ),
+                        ),
+
+                        // Salary section
+                        _buildDetailSection(
+                          title: 'Salary',
+                          icon: Icons.attach_money_rounded,
+                          iconColor: Colors.green,
+                          child: Text(
+                            salary,
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade300,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 24),
+
+                        // Job description
+                        _buildDetailSection(
+                          title: 'Job Description',
+                          icon: Icons.description_outlined,
+                          iconColor: Colors.blue,
+                          child: Text(
+                            description,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              height: 1.6,
+                              color: Colors.grey.shade300,
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 24),
+
+                        // Responsibilities
+                        if (responsibilities.isNotEmpty)
+                          _buildDetailSection(
+                            title: 'Responsibilities',
+                            icon: Icons.assignment_outlined,
+                            iconColor: Colors.orange,
+                            child: _buildBulletList(
+                              responsibilities.cast<String>(),
+                            ),
+                          ),
+
+                        if (responsibilities.isNotEmpty) SizedBox(height: 24),
+
+                        // Requirements
+                        if (requirements.isNotEmpty)
+                          _buildDetailSection(
+                            title: 'Requirements',
+                            icon: Icons.check_circle_outline,
+                            iconColor: Colors.purple,
+                            child: _buildBulletList(
+                              requirements.cast<String>(),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Close button
+          Positioned(
+            top: 12,
+            right: 12,
+            child: IconButton(
+              icon: Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade800.withOpacity(0.7),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.close, size: 20, color: Colors.white),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailHeader(String jobTitle, String company) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(24, 28, 24, 24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.shade900.withOpacity(0.6),
+            Colors.blue.shade800.withOpacity(0.2),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Company logo/icon
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    company.isNotEmpty ? company[0].toUpperCase() : 'C',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade900,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 16),
+
+              // Job title and company
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      jobTitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.3,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.business_center_outlined,
+                          size: 16,
+                          color: Colors.blue.shade300,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          company,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.blue.shade300,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJobStatsRow(
+    String employmentType,
+    String location,
+    String postedDate,
+    int applicants,
+  ) {
+    return Container(
+      margin: EdgeInsets.only(top: 16),
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          _buildStatChip(
+            Icons.work_outline,
+            employmentType,
+            Colors.blue.shade300,
+          ),
+          _buildStatChip(
+            Icons.location_on_outlined,
+            location,
+            Colors.red.shade300,
+          ),
+          _buildStatChip(
+            Icons.calendar_today_outlined,
+            'Posted: $postedDate',
+            Colors.green.shade300,
+          ),
+          _buildStatChip(
+            Icons.people_outline,
+            '$applicants Applicants',
+            Colors.orange.shade300,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(IconData icon, String label, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade300,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailSection({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            SizedBox(width: 12),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 14),
+        Padding(padding: const EdgeInsets.only(left: 8), child: child),
+      ],
+    );
+  }
+
+  Widget _buildBulletList(List<String> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children:
+          items.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: 6),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade400,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey.shade300,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = _getScreenWidth(context);
@@ -1039,7 +1539,7 @@ class _DashboardPageState extends State<DashboardPage>
                           minimumSize: Size(0, 36),
                           padding: EdgeInsets.zero,
                         ),
-                        onPressed: () {},
+                        onPressed: () => _fetchJobDetails(job['id']),
                       ),
                     ),
                   ],
@@ -1811,7 +2311,7 @@ class _DashboardPageState extends State<DashboardPage>
                   title,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey.shade400,
+                    color: Colors.white.withOpacity(0.8),
                   ),
                 ),
               ],
@@ -1834,7 +2334,7 @@ class _DashboardPageState extends State<DashboardPage>
             color: Colors.white,
           ),
         ),
-        IconButton(onPressed: (){}, icon: Icon(Icons.arrow_right))
+        IconButton(onPressed: () {}, icon: Icon(Icons.arrow_right)),
       ],
     );
   }
@@ -2036,9 +2536,8 @@ class _DashboardPageState extends State<DashboardPage>
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
-
-                // Information row
+                SizedBox(height: 8),
+                // Job status and date
                 Row(
                   children: [
                     Container(
@@ -2134,7 +2633,7 @@ class _DashboardPageState extends State<DashboardPage>
                           minimumSize: Size(0, 36),
                           padding: EdgeInsets.zero,
                         ),
-                        onPressed: () {},
+                        onPressed: () => _fetchJobDetails(job['id']),
                       ),
                     ),
                   ],
