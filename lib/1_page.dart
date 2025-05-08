@@ -625,6 +625,7 @@ class _DashboardPageState extends State<DashboardPage>
     return Center(
       child: Container(
         height: 120,
+
         child: ListView(
           scrollDirection: Axis.horizontal,
           physics: BouncingScrollPhysics(),
@@ -652,7 +653,7 @@ class _DashboardPageState extends State<DashboardPage>
     List<Color> gradientColors,
   ) {
     return Container(
-      width: 160,
+      width: 180,
       margin: EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -1833,14 +1834,7 @@ class _DashboardPageState extends State<DashboardPage>
             color: Colors.white,
           ),
         ),
-        TextButton.icon(
-          icon: Icon(Icons.visibility),
-          label: Text('View All'),
-          style: TextButton.styleFrom(foregroundColor: Colors.blue),
-          onPressed: () {
-            // Navigate to all jobs
-          },
-        ),
+        IconButton(onPressed: (){}, icon: Icon(Icons.arrow_right))
       ],
     );
   }
