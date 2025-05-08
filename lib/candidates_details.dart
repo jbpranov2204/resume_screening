@@ -133,10 +133,10 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
               pinned: true,
               backgroundColor: AppTheme.cardColor,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  _isAppBarExpanded ? widget.name : '',
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.bold),
-                ),
+                title:
+                    _isAppBarExpanded
+                        ? null // Avoid showing the name while scrolling
+                        : null,
                 background: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -220,23 +220,199 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                 onPressed: () => Navigator.of(context).pop(),
               ),
               actions: [
-                if (widget.email.isNotEmpty)
-                  IconButton(
-                    icon: Icon(Icons.email, color: Colors.white),
-                    onPressed: () {
-                      if (widget.sendEmail != null) {
-                        widget.sendEmail!(widget.email, widget.name, context);
-                      }
-                    },
-                    tooltip: 'Send Email',
-                  ),
                 IconButton(
                   icon: Icon(Icons.share, color: Colors.white),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Share functionality to be implemented'),
-                      ),
+                  onPressed: () async {
+                    final String message =
+                        'Candidate Details:\n'
+                        'Name: ${widget.name}\n'
+                        'Job Title: ${widget.jobTitle}\n'
+                        'Company: ${widget.company}\n'
+                        'Score: ${widget.score.toInt()}%\n'
+                        'Email: ${widget.email}\n'
+                        'Phone: ${widget.phone}\n'
+                        'About: ${widget.about}\n'
+                        'GitHub: ${widget.github}\n'
+                        'LinkedIn: ${widget.linkedin}\n';
+
+                    final Uri whatsappUri = Uri.parse(
+                      'https://wa.me/?text=${Uri.encodeComponent(message)}',
+                    );
+
+                    final Uri telegramUri = Uri.parse(
+                      'https://t.me/share/url?url=${Uri.encodeComponent(message)}',
+                    );
+
+                    final Uri linkedinUri = Uri.parse(
+                      'https://www.linkedin.com/sharing/share-offsite/?url=${Uri.encodeComponent(message)}',
+                    );
+
+                    final Uri instagramUri = Uri.parse(
+                      'https://www.instagram.com/?url=${Uri.encodeComponent(message)}',
+                    );
+
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return Dialog(
+                          backgroundColor: AppTheme.cardColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.share,
+                                      color: AppTheme.primaryColor,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Candidate Details',
+                                      style: AppTheme.headingStyle,
+                                    ),
+                                  ],
+                                ),
+                                Divider(
+                                  color: Colors.grey.shade800,
+                                  height: 24,
+                                ),
+                                Text(
+                                  'Choose a platform to share:',
+                                  style: AppTheme.bodyStyle,
+                                ),
+                                SizedBox(height: 20),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: [
+                                    _buildShareOption(
+                                      context,
+                                      'WhatsApp',
+                                      Icons.chat,
+                                      Color(0xFF25D366),
+                                      () async {
+                                        Navigator.of(context).pop();
+                                        if (await canLaunchUrl(whatsappUri)) {
+                                          await launchUrl(
+                                            whatsappUri,
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Could not open WhatsApp.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    _buildShareOption(
+                                      context,
+                                      'Telegram',
+                                      Icons.send,
+                                      Color(0xFF0088cc),
+                                      () async {
+                                        Navigator.of(context).pop();
+                                        if (await canLaunchUrl(telegramUri)) {
+                                          await launchUrl(
+                                            telegramUri,
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Could not open Telegram.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    _buildShareOption(
+                                      context,
+                                      'LinkedIn',
+                                      Icons.business_center,
+                                      Color(0xFF0077B5),
+                                      () async {
+                                        Navigator.of(context).pop();
+                                        if (await canLaunchUrl(linkedinUri)) {
+                                          await launchUrl(
+                                            linkedinUri,
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Could not open LinkedIn.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    _buildShareOption(
+                                      context,
+                                      'Instagram',
+                                      Icons.camera_alt,
+                                      Color(0xFFE1306C),
+                                      () async {
+                                        Navigator.of(context).pop();
+                                        if (await canLaunchUrl(instagramUri)) {
+                                          await launchUrl(
+                                            instagramUri,
+                                            mode:
+                                                LaunchMode.externalApplication,
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Could not open Instagram.',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: Text(
+                                    'Cancel',
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                   tooltip: 'Share',
@@ -1139,45 +1315,16 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
 
           // Communication card - separate from the Personal Contact card
           if (widget.email.isNotEmpty && widget.sendEmail != null)
-            _buildInfoCard('Communication', [
-              ListTile(
-                leading: Icon(Icons.mail, color: AppTheme.primaryColor),
-                title: Text(
-                  'Send Email to Candidate',
-                  style: GoogleFonts.montserrat(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Text(
-                  'Contact ${widget.name} about the position',
-                  style: GoogleFonts.montserrat(
-                    color: AppTheme.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: AppTheme.textSecondary,
-                ),
-                onTap:
-                    () => widget.sendEmail!(widget.email, widget.name, context),
+            // Company information card - separate from the other cards
+            _buildInfoCard('Company Information', [
+              _buildDetailItem(Icons.business, 'Company', widget.company),
+              _buildDetailItem(Icons.work, 'Position', widget.jobTitle),
+              _buildDetailItem(
+                Icons.calendar_today,
+                'Application Date',
+                widget.submittedDate,
               ),
             ]),
-
-          SizedBox(height: 20),
-
-          // Company information card - separate from the other cards
-          _buildInfoCard('Company Information', [
-            _buildDetailItem(Icons.business, 'Company', widget.company),
-            _buildDetailItem(Icons.work, 'Position', widget.jobTitle),
-            _buildDetailItem(
-              Icons.calendar_today,
-              'Application Date',
-              widget.submittedDate,
-            ),
-          ]),
         ],
       ),
     );
@@ -1305,6 +1452,42 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
         style: GoogleFonts.montserrat(
           color: AppTheme.textPrimary,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareOption(
+    BuildContext context,
+    String platform,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: 100,
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color, width: 1),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 32),
+            SizedBox(height: 8),
+            Text(
+              platform,
+              style: GoogleFonts.montserrat(
+                color: AppTheme.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
