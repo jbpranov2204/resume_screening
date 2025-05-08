@@ -303,44 +303,55 @@ class _DashboardPageState extends State<DashboardPage>
   Widget _buildMobileLayout() {
     return SafeArea(
       child: Container(
-        color: Colors.black.withOpacity(0.7),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black, Color(0xFF121212)],
+          ),
+        ),
         child: Column(
           children: [
-            // Mobile app bar
+            // Mobile app bar with new design
             _buildMobileAppBar(),
 
             // Main content with scrolling
             Expanded(
-              child: SingleChildScrollView(
+              child: ListView(
                 padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Mobile welcome card
-                    _buildMobileWelcomeCard(),
+                physics: BouncingScrollPhysics(),
+                children: [
+                  // Action buttons row
 
-                    SizedBox(height: 24),
+                  // Animated welcome card
+                  _buildAnimatedWelcomeCard(),
 
-                    // Mobile stats cards (horizontally scrollable)
-                    _buildMobileStatsCards(),
+                  SizedBox(height: 24),
 
-                    SizedBox(height: 24),
+                  // Mobile stats cards with new design
+                  _buildMobileStatsCards(),
 
-                    // Recent jobs header
-                    _buildMobileSectionHeader(
-                      'Recent Job Listings',
-                      'View All',
-                      () {
-                        /* Navigate to all jobs */
-                      },
-                    ),
+                  SizedBox(height: 28),
 
-                    SizedBox(height: 12),
+                  // Recent activity timeline
+                  _buildRecentActivityTimeline(),
 
-                    // Job listings
-                    _buildMobileJobListings(),
-                  ],
-                ),
+                  SizedBox(height: 28),
+
+                  // Job listings section
+                  _buildMobileSectionHeader(
+                    'Recent Job Listings',
+                    'View All',
+                    () {
+                      /* Navigate to all jobs */
+                    },
+                  ),
+
+                  SizedBox(height: 16),
+
+                  // Redesigned job listings
+                  _buildMobileJobListings(),
+                ],
               ),
             ),
           ],
@@ -349,252 +360,698 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
+  // New mobile app bar with more modern design
   Widget _buildMobileAppBar() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.8),
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade800, width: 0.5),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 20,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Builder(
-            builder:
-                (context) => IconButton(
-                  icon: Icon(Icons.menu, color: Colors.white),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                ),
-          ),
-          Text(
-            'ResumeScreen',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
           Row(
             children: [
-              IconButton(
-                icon: Icon(Icons.search, color: Colors.white),
-                onPressed: () {
-                  // Show search dialog
-                },
+              Builder(
+                builder:
+                    (context) => GestureDetector(
+                      onTap: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.menu, color: Colors.blue),
+                      ),
+                    ),
               ),
-              IconButton(
-                icon: Icon(Icons.notifications_outlined, color: Colors.white),
-                onPressed: () {
-                  // Show notifications
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMobileWelcomeCard() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.blue.shade900, Colors.blue.shade700],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.shade900.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: NetworkImage(
-                  'https://upload.wikimedia.org/wikipedia/commons/6/66/Sachin-Tendulkar.jpg',
-                ),
-              ),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(width: 16),
+              Row(
                 children: [
+                  Icon(Icons.file_copy_outlined, color: Colors.blue),
+                  SizedBox(width: 8),
                   Text(
-                    'Hello, $_username',
+                    'ResumeScreen',
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    DateFormat('EEEE, MMM d').format(DateTime.now()),
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.blue.shade100,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 20),
-          Text(
-            'You have 12 candidates waiting for review',
-            style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
-          ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _navigateToCandidates,
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.blue.shade900,
-              backgroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.blue.withOpacity(0.2),
+            backgroundImage: NetworkImage(
+              'https://upload.wikimedia.org/wikipedia/commons/6/66/Sachin-Tendulkar.jpg',
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.blue, width: 2),
               ),
             ),
-            child: Text(
-              'Review Candidates',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // New quick action buttons with icon and label
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: 80,
+      margin: EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color),
+            ),
+            SizedBox(height: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Animated welcome card with gradient and animation
+  Widget _buildAnimatedWelcomeCard() {
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 800),
+      curve: Curves.easeOutQuad,
+      builder: (context, double value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1A237E),
+                    Color(0xFF3949AB),
+                    Color(0xFF3F51B5),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFF1A237E).withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.8),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundImage: NetworkImage(
+                              'https://upload.wikimedia.org/wikipedia/commons/6/66/Sachin-Tendulkar.jpg',
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $_username',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('EEEE, MMM d').format(DateTime.now()),
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: Colors.blue.shade100,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.notifications_none_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'You have 12 candidates waiting for review',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _navigateToCandidates,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Color(0xFF3949AB),
+                      backgroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Review Candidates',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
+  // Redesigned mobile stats cards with more visual appeal
   Widget _buildMobileStatsCards() {
-    return Container(
-      height: 120,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          _buildMobileStatCard(
-            'Active Jobs',
-            '2',
-            Icons.work_outline,
-            Colors.blue,
-          ),
-          _buildMobileStatCard(
-            'Applicants',
-            '74',
-            Icons.people_outline,
-            Colors.orange,
-          ),
-          _buildMobileStatCard(
-            'Pending',
-            '12',
-            Icons.pending_outlined,
-            Colors.purple,
-          ),
-          _buildMobileStatCard(
-            'Interviews',
-            '8',
-            Icons.calendar_today,
-            Colors.green,
-          ),
-        ],
+    return Center(
+      child: Container(
+        height: 120,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          physics: BouncingScrollPhysics(),
+          children: [
+            _buildGlassMorphicStatCard('Active Jobs', '2', Icons.work_outline, [
+              Color(0xFF2979FF),
+              Color(0xFF1565C0),
+            ]),
+            _buildGlassMorphicStatCard(
+              'Applicants',
+              '74',
+              Icons.people_outline,
+              [Color(0xFFFF9800), Color(0xFFE65100)],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMobileStatCard(
+  Widget _buildGlassMorphicStatCard(
     String title,
     String value,
     IconData icon,
-    Color color,
+    List<Color> gradientColors,
   ) {
     return Container(
-      width: 140,
-      margin: EdgeInsets.only(right: 12),
-      padding: EdgeInsets.all(16),
+      width: 160,
+      margin: EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade800),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 18),
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors[0].withOpacity(0.3),
+            blurRadius: 10,
+            offset: Offset(0, 5),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Background design elements
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
               ),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey.shade400,
-                ),
+            ),
+          ),
+          Positioned(
+            left: -20,
+            top: -20,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
               ),
-            ],
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 18),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMobileSectionHeader(
-    String title,
-    String actionText,
-    VoidCallback onAction,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // New recent activity timeline section
+  Widget _buildRecentActivityTimeline() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 16),
+          child: Text(
+            'Recent Activity',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ),
-        TextButton(
-          onPressed: onAction,
-          child: Text(
-            actionText,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: Colors.blue,
-              fontWeight: FontWeight.w500,
+
+        _buildTimelineItem(
+          title: 'New candidate applied',
+          subtitle: 'John Doe applied for Flutter Developer',
+          time: '2 hours ago',
+          iconData: Icons.person_add_outlined,
+          iconColor: Colors.green,
+        ),
+
+        _buildTimelineItem(
+          title: 'Interview scheduled',
+          subtitle: 'With Sarah Wilson for UI/UX Designer',
+          time: 'Yesterday',
+          iconData: Icons.event_note_outlined,
+          iconColor: Colors.blue,
+        ),
+
+        _buildTimelineItem(
+          title: 'New job posted',
+          subtitle: 'Android Developer position',
+          time: '2 days ago',
+          iconData: Icons.work_outline_outlined,
+          iconColor: Colors.orange,
+          isLast: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimelineItem({
+    required String title,
+    required String subtitle,
+    required String time,
+    required IconData iconData,
+    required Color iconColor,
+    bool isLast = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(iconData, color: iconColor, size: 20),
             ),
+            if (!isLast)
+              Container(width: 2, height: 40, color: Colors.grey.shade800),
+          ],
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.grey.shade400,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                time,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              SizedBox(height: isLast ? 0 : 20),
+            ],
           ),
         ),
       ],
     );
   }
 
+  // Redesigned mobile job card for better appearance
+  Widget _buildMobileJobCard(Map<String, dynamic> job) {
+    final String title = job['jobTitle'] ?? 'Untitled Job';
+    final String status = job['employmentType'] ?? 'Unknown';
+    final String company = job['company'] ?? 'No Company';
+    final int applicants = job['applicants'] ?? 0;
+    final Timestamp? timestamp = job['postedAt'];
+    final String date =
+        timestamp != null
+            ? DateFormat('MMM dd').format(timestamp.toDate())
+            : 'No date';
+    final bool isActive = status == 'Active';
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.grey.shade900, Colors.grey.shade800.withOpacity(0.8)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () {
+            // Navigate to job details
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.shade600, Colors.blue.shade900],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.work_outline,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            company,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+
+                // Information row
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            isActive
+                                ? Colors.green.withOpacity(0.2)
+                                : Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        status,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color:
+                              isActive
+                                  ? Colors.green.shade400
+                                  : Colors.orange.shade400,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 12,
+                            color: Colors.blue.shade400,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '$applicants',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.blue.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Spacer(),
+                    Text(
+                      date,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16),
+
+                // Action buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: Icon(Icons.person_search, size: 18),
+                        label: Text('Candidates'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.grey.shade700),
+                          minimumSize: Size(0, 36),
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.visibility_outlined, size: 18),
+                        label: Text('Details'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade700,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(0, 36),
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Update this method to use the new mobile job card
   Widget _buildMobileJobListings() {
     return StreamBuilder<QuerySnapshot>(
       stream: _jobsStream,
@@ -602,8 +1059,10 @@ class _DashboardPageState extends State<DashboardPage>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: CircularProgressIndicator(),
+              padding: const EdgeInsets.all(20),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
             ),
           );
         }
@@ -620,6 +1079,7 @@ class _DashboardPageState extends State<DashboardPage>
           itemCount: snapshot.data!.docs.length,
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
           itemBuilder: (context, index) {
             Map<String, dynamic> job =
                 snapshot.data!.docs[index].data() as Map<String, dynamic>;
@@ -631,55 +1091,52 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  Widget _buildMobileErrorCard(String message) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      margin: EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.red.shade900.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade800),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.error_outline, color: Colors.red, size: 32),
-          SizedBox(height: 10),
-          Text(
-            message,
-            style: GoogleFonts.poppins(color: Colors.red.shade100),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Redesigned empty state with better visuals
   Widget _buildMobileEmptyCard(String message) {
     return Container(
-      padding: EdgeInsets.all(30),
-      margin: EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.all(24),
+      margin: EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade900.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade800),
       ),
       child: Column(
         children: [
-          Icon(Icons.work_off_outlined, color: Colors.grey, size: 32),
-          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.work_off_outlined,
+              color: Colors.blue.shade300,
+              size: 40,
+            ),
+          ),
+          SizedBox(height: 20),
           Text(
             message,
-            style: GoogleFonts.poppins(color: Colors.grey.shade400),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade300,
+            ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 24),
           ElevatedButton.icon(
-            icon: Icon(Icons.add, size: 18),
-            label: Text('Create Job'),
+            icon: Icon(Icons.add),
+            label: Text('Create New Job'),
             style: ElevatedButton.styleFrom(
               foregroundColor: Colors.white,
-              backgroundColor: Colors.blue,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              backgroundColor: Colors.blue.shade700,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
             ),
             onPressed: _navigateToJobUpload,
           ),
@@ -688,142 +1145,95 @@ class _DashboardPageState extends State<DashboardPage>
     );
   }
 
-  Widget _buildMobileJobCard(Map<String, dynamic> job) {
-    final String title = job['jobTitle'] ?? 'Untitled Job';
-    final String status = job['employmentType'] ?? 'Unknown';
-    final String company = job['company'] ?? 'No Company';
-    final int applicants = job['applicants'] ?? 0;
-    final Timestamp? timestamp = job['postedAt'];
-    final String date =
-        timestamp != null
-            ? DateFormat('MMM dd').format(timestamp.toDate())
-            : 'No date';
-    final bool isActive = status == 'Active';
-
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      color: Colors.grey.shade900,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade800),
-      ),
-      child: InkWell(
-        onTap: () {
-          // Navigate to job details
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.work_outline,
-                      color: Colors.blue,
-                      size: 18,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          company,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color:
-                          isActive
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.orange.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      status,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: isActive ? Colors.green : Colors.orange,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    '$applicants applicants',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
-                  Spacer(),
-                  Text(
-                    date,
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: Colors.grey.shade500,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      // View details
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'View Details',
-                      style: GoogleFonts.poppins(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+  // Mobile section header with title and action button
+  Widget _buildMobileSectionHeader(
+    String title,
+    String actionLabel,
+    VoidCallback onActionPressed,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
+        TextButton(
+          onPressed: onActionPressed,
+          child: Text(
+            actionLabel,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.blue,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Redesigned error state with better visuals
+  Widget _buildMobileErrorCard(String message) {
+    return Container(
+      padding: EdgeInsets.all(24),
+      margin: EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.red.shade900.withOpacity(0.5),
+            Colors.red.shade800.withOpacity(0.3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.shade800),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.error_outline,
+              color: Colors.red.shade300,
+              size: 32,
+            ),
+          ),
+          SizedBox(height: 16),
+          Text(
+            message,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.red.shade100,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 16),
+          OutlinedButton.icon(
+            icon: Icon(Icons.refresh),
+            label: Text('Try Again'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: BorderSide(color: Colors.red.shade400),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onPressed: () {
+              setState(() {
+                _jobsStream = _firestore.collection('jobs').snapshots();
+              });
+            },
+          ),
+        ],
       ),
     );
   }
@@ -1526,6 +1936,7 @@ class _DashboardPageState extends State<DashboardPage>
             Text(
               message,
               style: GoogleFonts.poppins(color: Colors.grey.shade400),
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: 24),
             ElevatedButton.icon(
@@ -1596,7 +2007,11 @@ class _DashboardPageState extends State<DashboardPage>
                         color: Colors.blue.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.work_outline, color: Colors.blue),
+                      child: Icon(
+                        Icons.work_outline,
+                        color: Colors.blue,
+                        size: 18,
+                      ),
                     ),
                     SizedBox(width: 12),
                     Expanded(
@@ -1628,8 +2043,9 @@ class _DashboardPageState extends State<DashboardPage>
                   ],
                 ),
                 SizedBox(height: 16),
+
+                // Information row
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: EdgeInsets.symmetric(
@@ -1647,46 +2063,84 @@ class _DashboardPageState extends State<DashboardPage>
                         status,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: isActive ? Colors.green : Colors.orange,
+                          color:
+                              isActive
+                                  ? Colors.green.shade400
+                                  : Colors.orange.shade400,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
+                    SizedBox(width: 12),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 12,
+                            color: Colors.blue.shade400,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '$applicants',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.blue.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Spacer(),
                     Text(
-                      '$applicants applicants',
+                      date,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.grey.shade400,
+                        color: Colors.grey.shade500,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
+
+                SizedBox(height: 16),
+
+                // Action buttons
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Posted: $date',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey.shade400,
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: Icon(Icons.person_search, size: 18),
+                        label: Text('Candidates'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: BorderSide(color: Colors.grey.shade700),
+                          minimumSize: Size(0, 36),
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: () {},
                       ),
                     ),
-                    InkWell(
-                      onTap: () {
-                        // Action for viewing details
-                      },
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Text(
-                          'View Details',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.visibility_outlined, size: 18),
+                        label: Text('Details'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade700,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(0, 36),
+                          padding: EdgeInsets.zero,
                         ),
+                        onPressed: () {},
                       ),
                     ),
                   ],
