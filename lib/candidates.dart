@@ -149,6 +149,19 @@ class CandidatesPage extends StatelessWidget {
     }
   }
 
+  void _deleteCandidate(String candidateId, BuildContext context) async {
+    try {
+      await _firestore.collection('resume_analysis').doc(candidateId).delete();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Candidate deleted successfully')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error deleting candidate: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Check if we're on mobile or web based on screen width
@@ -249,8 +262,6 @@ class CandidatesPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with action buttons
-              _buildHeader(context, candidates, isMobile),
-              SizedBox(height: 24),
 
               // Candidates list
               Expanded(
@@ -263,86 +274,6 @@ class CandidatesPage extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildHeader(
-    BuildContext context,
-    List<Map<String, dynamic>> candidates,
-    bool isMobile,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
-      decoration: BoxDecoration(
-        color: Color.fromARGB(255, 20, 30, 40),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Candidate Analysis Results',
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: isMobile ? 18 : 22,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Review and contact candidates based on their resume analysis',
-            style: GoogleFonts.montserrat(
-              color: Colors.grey[400],
-              fontSize: isMobile ? 12 : 14,
-            ),
-          ),
-          SizedBox(height: 20),
-          isMobile
-              ? Column(
-                children: [
-                  _buildActionButton(
-                    'Email All Selected',
-                    Icons.email,
-                    Colors.green,
-                    () => _sendEmailToAllSelected(candidates, context),
-                    fullWidth: true,
-                  ),
-                  SizedBox(height: 8),
-                  _buildActionButton(
-                    'Download Report',
-                    Icons.download,
-                    Colors.blue,
-                    () {}, // Add download functionality
-                    fullWidth: true,
-                  ),
-                ],
-              )
-              : Row(
-                children: [
-                  _buildActionButton(
-                    'Email All Selected',
-                    Icons.email,
-                    Colors.green,
-                    () => _sendEmailToAllSelected(candidates, context),
-                  ),
-                  SizedBox(width: 16),
-                  _buildActionButton(
-                    'Download Report',
-                    Icons.download,
-                    Colors.blue,
-                    () {}, // Add download functionality
-                  ),
-                ],
-              ),
-        ],
-      ),
     );
   }
 
@@ -1000,7 +931,7 @@ class CandidatesPage extends StatelessWidget {
           ),
           child: InkWell(
             onTap: () {
-              // Navigate to detailed page instead of showing bottom sheet
+              // Navigate to detailed page
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder:
@@ -1580,7 +1511,34 @@ class CandidatesPage extends StatelessWidget {
                                 color: Colors.red,
                               ),
                               onPressed: () {
-                                // Delete candidate
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text('Delete Candidate'),
+                                      content: Text(
+                                        'Are you sure you want to delete this candidate?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.of(context).pop(),
+                                          child: Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                            _deleteCandidate(
+                                              candidate['id'],
+                                              context,
+                                            );
+                                          },
+                                          child: Text('Delete'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
                               },
                               tooltip: 'Delete',
                             ),

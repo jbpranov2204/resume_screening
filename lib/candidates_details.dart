@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 // Use the same theme class for consistency
 class AppTheme {
   static const Color primaryColor = Color(0xFF3498DB);
-  static const Color secondaryColor = Color(0xFFFFD700);
+  static const Color secondaryColor = Color.fromARGB(255, 0, 21, 255);
   static const Color backgroundColor = Color(0xFF121212);
   static const Color cardColor = Color(0xFF1E2330);
   static const Color textPrimary = Colors.white;
@@ -266,20 +266,6 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
             _buildContactTab(),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (widget.email.isNotEmpty && widget.sendEmail != null) {
-            widget.sendEmail!(widget.email, widget.name, context);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('No email address available')),
-            );
-          }
-        },
-        backgroundColor: AppTheme.primaryColor,
-        child: Icon(Icons.send),
-        tooltip: 'Send Email',
       ),
     );
   }
