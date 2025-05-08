@@ -86,31 +86,43 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
 
     try {
       // Log file information for debugging
-      print('Analyzing resume: ${resumeFile.name}, Size: ${resumeFile.size} bytes');
+      print(
+        'Analyzing resume: ${resumeFile.name}, Size: ${resumeFile.size} bytes',
+      );
 
       // Create Dio instance with base options - increasing timeouts significantly
-      final dio = Dio(BaseOptions(
-        baseUrl: 'https://resume-2kvb.onrender.com/',
-        connectTimeout: Duration(seconds: 60),  // Increased from 15 to 60 seconds
-        receiveTimeout: Duration(seconds: 60),  // Increased from 15 to 60 seconds
-        sendTimeout: Duration(seconds: 60),     // Added send timeout of 60 seconds
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'multipart/form-data',
-        },
-      ));
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: 'https://resume-2kvb.onrender.com/',
+          connectTimeout: Duration(
+            seconds: 60,
+          ), // Increased from 15 to 60 seconds
+          receiveTimeout: Duration(
+            seconds: 60,
+          ), // Increased from 15 to 60 seconds
+          sendTimeout: Duration(
+            seconds: 60,
+          ), // Added send timeout of 60 seconds
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
 
       // Show a more informative message that the server might be slow
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Connecting to resume analysis server. This may take a moment...'),
+          content: Text(
+            'Connecting to resume analysis server. This may take a moment...',
+          ),
           duration: Duration(seconds: 3),
         ),
       );
 
       // Create FormData object
       FormData formData;
-      
+
       if (kIsWeb) {
         // Web platform handling
         final bytes = resumeFile.bytes;
@@ -121,7 +133,9 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             'file': MultipartFile.fromBytes(bytes, filename: filename),
           });
         } else {
-          throw Exception("Resume file bytes are null. Please upload a valid resume.");
+          throw Exception(
+            "Resume file bytes are null. Please upload a valid resume.",
+          );
         }
       } else {
         // Mobile/Desktop platform handling
@@ -129,18 +143,23 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         if (filePath != null) {
           print('Uploading native file from path: $filePath');
           formData = FormData.fromMap({
-            'file': await MultipartFile.fromFile(filePath, filename: resumeFile.name),
+            'file': await MultipartFile.fromFile(
+              filePath,
+              filename: resumeFile.name,
+            ),
           });
         } else {
-          throw Exception("Resume file path is null. Please upload a valid resume.");
+          throw Exception(
+            "Resume file path is null. Please upload a valid resume.",
+          );
         }
       }
 
       print('Sending request to server with longer timeout...');
-      
+
       // Send the request with Dio
       final response = await dio.post(
-        '/', 
+        '/',
         data: formData,
         onSendProgress: (sent, total) {
           print('Upload progress: ${(sent / total * 100).toStringAsFixed(2)}%');
@@ -148,10 +167,10 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
       );
 
       print('API Response Status: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final data = response.data;
-        
+
         // Return the analysis result
         if (data['analysis'] is Map) {
           return data['analysis'] as Map<String, dynamic>;
@@ -161,30 +180,30 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             return jsonDecode(data['analysis']) as Map<String, dynamic>;
           } catch (e) {
             print('Error parsing analysis JSON string: $e');
-            return {
-              'error': 'Could not parse analysis: ${data['analysis']}',
-            };
+            return {'error': 'Could not parse analysis: ${data['analysis']}'};
           }
         } else {
           return {'error': 'Invalid analysis format'};
         }
       } else {
         return {
-          'error': 'Server error: ${response.statusCode}\nDetails: ${response.data}',
+          'error':
+              'Server error: ${response.statusCode}\nDetails: ${response.data}',
         };
       }
     } on DioException catch (e) {
       print('Dio error during resume analysis: ${e.message}');
       String errorMsg = 'Network error';
-      
-      if (e.type == DioExceptionType.connectionTimeout || 
+
+      if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
-        errorMsg = 'The server is taking too long to respond. Please try again later.';
+        errorMsg =
+            'The server is taking too long to respond. Please try again later.';
       } else if (e.response != null) {
         errorMsg = 'Server error: ${e.response?.statusCode}';
       }
-      
+
       return {'error': errorMsg};
     } catch (e) {
       print('Error during resume analysis: $e');
@@ -942,10 +961,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0E3B69),
-              Color(0xFF0A2A4D),
-            ],
+            colors: [Color(0xFF0E3B69), Color(0xFF0A2A4D)],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -1061,26 +1077,40 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                   child: Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: skills.take(3).map((skill) => Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.withOpacity(0.3), Colors.indigo.withOpacity(0.2)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                      ),
-                      child: Text(
-                        skill.toString(),
-                        style: GoogleFonts.montserrat(
-                          color: Colors.white,
-                          fontSize: isMobile ? 10 : 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    )).toList(),
+                    children:
+                        skills
+                            .take(3)
+                            .map(
+                              (skill) => Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.blue.withOpacity(0.3),
+                                      Colors.indigo.withOpacity(0.2),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.blue.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Text(
+                                  skill.toString(),
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                    fontSize: isMobile ? 10 : 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
                   ),
                 ),
                 SizedBox(height: 16),
@@ -1148,7 +1178,10 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                     ],
                   ),
                   child: ElevatedButton(
-                    onPressed: _resumeFiles[jobId] == null ? null : () => _submitResume(job),
+                    onPressed:
+                        _resumeFiles[jobId] == null
+                            ? null
+                            : () => _submitResume(job),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.transparent,
@@ -1166,7 +1199,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                         Icon(Icons.send_rounded, size: 18),
                         SizedBox(width: 8),
                         Text(
-                          'Submit Resume',
+                          'Submit',
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.w600,
                             fontSize: isMobile ? 12 : 14,
@@ -1204,7 +1237,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             ),
           ),
         ),
-      )
+      ),
     );
   }
 
@@ -1221,10 +1254,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF0E3B69),
-            Color(0xFF0A2A4D),
-          ],
+          colors: [Color(0xFF0E3B69), Color(0xFF0A2A4D)],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
@@ -1259,13 +1289,13 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Colors.white.withOpacity(0.2),
-                            Colors.white.withOpacity(0.05),
+                            Colors.white.withOpacity(0.3),
+                            Colors.white.withOpacity(0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withOpacity(0.2),
                           width: 1.5,
                         ),
                       ),
@@ -1356,26 +1386,40 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: skills.take(3).map((skill) => Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.blue.withOpacity(0.3), Colors.indigo.withOpacity(0.2)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                    ),
-                    child: Text(
-                      skill.toString(),
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  )).toList(),
+                  children:
+                      skills
+                          .take(3)
+                          .map(
+                            (skill) => Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.blue.withOpacity(0.3),
+                                    Colors.indigo.withOpacity(0.2),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: Colors.blue.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Text(
+                                skill.toString(),
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
 
                 SizedBox(height: 16),
@@ -1448,11 +1492,16 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: _resumeFiles[jobId] == null ? null : () => _submitResume(job),
+                          onPressed:
+                              _resumeFiles[jobId] == null
+                                  ? null
+                                  : () => _submitResume(job),
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.white,
                             backgroundColor: Colors.transparent,
-                            disabledBackgroundColor: Colors.grey.withOpacity(0.3),
+                            disabledBackgroundColor: Colors.grey.withOpacity(
+                              0.3,
+                            ),
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1477,7 +1526,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                     ),
                   ],
                 ),
-                
+
                 if (_resumeFiles[jobId] != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -1494,7 +1543,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
                             '${_resumeFiles[jobId]!.name}',
                             style: GoogleFonts.poppins(
                               color: Colors.green[300],
-                              fontSize: 10,
+                              fontSize: 12,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1506,7 +1555,7 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
             ),
           ),
         ),
-      )
+      ),
     );
   }
 
@@ -1521,7 +1570,14 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     List<dynamic> skills,
   ) {
     // Reuse mobile list card for desktop layout
-    return _buildMobileListJobCard(job, jobId, title, company, location, skills);
+    return _buildMobileListJobCard(
+      job,
+      jobId,
+      title,
+      company,
+      location,
+      skills,
+    );
   }
 
   // Details dialog
@@ -1538,232 +1594,639 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     final List<dynamic> skills = job['requiredSkills'] ?? [];
 
     final isMobile = MediaQuery.of(context).size.width <= 600;
+    final companyInitial = company.isNotEmpty ? company[0].toUpperCase() : 'C';
 
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Color(0xFF16213E),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: isMobile ? double.infinity : 800,
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            child: Column(
-              children: [
-                // Job header
-                Container(
-                  padding: EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF0D3B66),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
+      barrierDismissible: true,
+      barrierLabel: 'Job Details',
+      barrierColor: Colors.black87,
+      transitionDuration: Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Container(); // Not used, we'll use transitionBuilder instead
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutQuint,
+        );
+
+        return ScaleTransition(
+          scale: Tween<double>(begin: 0.9, end: 1.0).animate(curvedAnimation),
+          child: FadeTransition(
+            opacity: curvedAnimation,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 40,
+                vertical: 24,
+              ),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: isMobile ? double.infinity : 800,
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0D2645), Color(0xFF071630)],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Stack(
                     children: [
-                      Row(
+                      // Background decorative elements
+                      Positioned(
+                        top: -50,
+                        right: -50,
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.blueAccent.withOpacity(0.1),
+                                Colors.transparent,
+                              ],
+                              stops: [0.0, 0.8],
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -100,
+                        left: -50,
+                        child: Container(
+                          width: 250,
+                          height: 250,
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.purpleAccent.withOpacity(0.07),
+                                Colors.transparent,
+                              ],
+                              stops: [0.0, 0.8],
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+
+                      // Content
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // Top section with header and image
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF0A3166), Color(0xFF072547)],
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Top bar with close button
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Color(
+                                            0xFFFFD700,
+                                          ).withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
+                                          border: Border.all(
+                                            color: Color(
+                                              0xFFFFD700,
+                                            ).withOpacity(0.3),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'FEATURED',
+                                              style: GoogleFonts.montserrat(
+                                                color: Color(0xFFFFD700),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: 1,
+                                              ),
+                                            ),
+                                            SizedBox(width: 4),
+                                            Icon(
+                                              Icons.star,
+                                              color: Color(0xFFFFD700),
+                                              size: 12,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Spacer(),
+                                      IconButton(
+                                        onPressed:
+                                            () => Navigator.of(context).pop(),
+                                        icon: Container(
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(
+                                              0.1,
+                                            ),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.close,
+                                            color: Colors.white.withOpacity(
+                                              0.8,
+                                            ),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        splashRadius: 24,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Job title and company info
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(24, 16, 24, 24),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Company logo with 3D effect
+                                      Container(
+                                        width: 70,
+                                        height: 70,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              Colors.white.withOpacity(0.25),
+                                              Colors.white.withOpacity(0.05),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.2,
+                                              ),
+                                              blurRadius: 10,
+                                              offset: Offset(0, 5),
+                                            ),
+                                            BoxShadow(
+                                              color: Colors.white.withOpacity(
+                                                0.1,
+                                              ),
+                                              blurRadius: 10,
+                                              offset: Offset(0, -3),
+                                              spreadRadius: -2,
+                                            ),
+                                          ],
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(
+                                              0.1,
+                                            ),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            companyInitial,
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 28,
+                                              shadows: [
+                                                Shadow(
+                                                  offset: Offset(0, 3),
+                                                  blurRadius: 6,
+                                                  color: Colors.black
+                                                      .withOpacity(0.4),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 20),
+
+                                      // Job title and metadata
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              title,
+                                              style: GoogleFonts.montserrat(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: isMobile ? 20 : 24,
+                                                height: 1.2,
+                                              ),
+                                            ),
+                                            SizedBox(height: 10),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.business_outlined,
+                                                  color: Color(0xFFFFD700),
+                                                  size: 16,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  company,
+                                                  style: GoogleFonts.montserrat(
+                                                    color: Colors.white
+                                                        .withOpacity(0.9),
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 5),
+                                            Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.location_on_outlined,
+                                                  color: Color(0xFFFFD700),
+                                                  size: 16,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  location,
+                                                  style: GoogleFonts.montserrat(
+                                                    color: Colors.white
+                                                        .withOpacity(0.7),
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Employment details with pills
+                                Container(
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.2),
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(30),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildInfoPill(
+                                        icon: Icons.work_outline,
+                                        label: "Type",
+                                        value: employmentType,
+                                        color: Colors.blue[400]!,
+                                      ),
+                                      Container(
+                                        height: 30,
+                                        width: 1,
+                                        color: Colors.white.withOpacity(0.1),
+                                      ),
+                                      _buildInfoPill(
+                                        icon: Icons.trending_up,
+                                        label: "Experience",
+                                        value: experienceLevel,
+                                        color: Colors.purple[300]!,
+                                      ),
+                                      Container(
+                                        height: 30,
+                                        width: 1,
+                                        color: Colors.white.withOpacity(0.1),
+                                      ),
+                                      _buildInfoPill(
+                                        icon: Icons.attach_money,
+                                        label: "Salary",
+                                        value: salary,
+                                        color: Colors.green[400]!,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Job details with custom scrollbar
                           Expanded(
-                            child: Text(
-                              title,
-                              style: GoogleFonts.montserrat(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isMobile ? 18 : 24,
+                            child: Theme(
+                              data: ThemeData(
+                                scrollbarTheme: ScrollbarThemeData(
+                                  thumbColor: MaterialStateProperty.all(
+                                    Colors.white.withOpacity(0.3),
+                                  ),
+                                ),
+                              ),
+                              child: Scrollbar(
+                                thickness: 6,
+                                radius: Radius.circular(3),
+                                child: SingleChildScrollView(
+                                  padding: EdgeInsets.all(24),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildSectionHeader(
+                                        title: "Job Description",
+                                        icon: Icons.description_outlined,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Container(
+                                        padding: EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(
+                                              0.1,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          description,
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white.withOpacity(
+                                              0.8,
+                                            ),
+                                            fontSize: 15,
+                                            height: 1.6,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 24),
+
+                                      _buildSectionHeader(
+                                        title: "Required Skills",
+                                        icon: Icons.lightbulb_outline,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children:
+                                            skills
+                                                .map(
+                                                  (skill) => _buildSkillChip(
+                                                    skill.toString(),
+                                                  ),
+                                                )
+                                                .toList(),
+                                      ),
+                                      SizedBox(height: 24),
+
+                                      _buildSectionHeader(
+                                        title: "Job Details",
+                                        icon: Icons.info_outline,
+                                      ),
+                                      SizedBox(height: 16),
+                                      _buildJobDetail(
+                                        iconData: Icons.work_outline,
+                                        label: "Employment Type",
+                                        value: employmentType,
+                                      ),
+                                      _buildJobDetail(
+                                        iconData: Icons.timeline,
+                                        label: "Experience Level",
+                                        value: experienceLevel,
+                                      ),
+                                      _buildJobDetail(
+                                        iconData: Icons.attach_money,
+                                        label: "Salary",
+                                        value: salary,
+                                      ),
+                                      _buildJobDetail(
+                                        iconData: Icons.location_on_outlined,
+                                        label: "Location",
+                                        value: location,
+                                      ),
+                                      SizedBox(height: 30),
+
+                                      // Application section
+                                      _buildSectionHeader(
+                                        title: "Apply for this job",
+                                        icon: Icons.send_outlined,
+                                      ),
+                                      SizedBox(height: 16),
+
+                                      // Resume status indicator
+                                      if (_resumeFiles[jobId] != null)
+                                        _buildResumeStatusCard(
+                                          _resumeFiles[jobId]!,
+                                        ),
+
+                                      SizedBox(height: 16),
+
+                                      // Action buttons with gradients
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Container(
+                                              height: 50,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.blue[700]!,
+                                                    Colors.blue[400]!,
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.blue
+                                                        .withOpacity(0.3),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ElevatedButton(
+                                                onPressed:
+                                                    () => _pickFile(jobId),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  shadowColor:
+                                                      Colors.transparent,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.upload_file_rounded,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Upload',
+                                                      style:
+                                                          GoogleFonts.montserrat(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 16),
+                                          Expanded(
+                                            child: Container(
+                                              height: 50,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                gradient:
+                                                    _resumeFiles[jobId] == null
+                                                        ? LinearGradient(
+                                                          colors: [
+                                                            Colors.grey[700]!,
+                                                            Colors.grey[600]!,
+                                                          ],
+                                                          begin:
+                                                              Alignment.topLeft,
+                                                          end:
+                                                              Alignment
+                                                                  .bottomRight,
+                                                        )
+                                                        : LinearGradient(
+                                                          colors: [
+                                                            Colors.green[700]!,
+                                                            Colors.green[500]!,
+                                                          ],
+                                                          begin:
+                                                              Alignment.topLeft,
+                                                          end:
+                                                              Alignment
+                                                                  .bottomRight,
+                                                        ),
+                                                boxShadow:
+                                                    _resumeFiles[jobId] == null
+                                                        ? []
+                                                        : [
+                                                          BoxShadow(
+                                                            color: Colors.green
+                                                                .withOpacity(
+                                                                  0.3,
+                                                                ),
+                                                            blurRadius: 8,
+                                                            offset: Offset(
+                                                              0,
+                                                              4,
+                                                            ),
+                                                          ),
+                                                        ],
+                                              ),
+                                              child: ElevatedButton(
+                                                onPressed:
+                                                    _resumeFiles[jobId] == null
+                                                        ? null
+                                                        : () =>
+                                                            _submitResume(job),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.transparent,
+                                                  shadowColor:
+                                                      Colors.transparent,
+                                                  disabledForegroundColor:
+                                                      Colors.white.withOpacity(
+                                                        0.5,
+                                                      ),
+                                                  disabledBackgroundColor:
+                                                      Colors.transparent,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(Icons.send_rounded),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Submit',
+                                                      style:
+                                                          GoogleFonts.montserrat(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.close, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.business,
-                            color: Colors.blue[200],
-                            size: isMobile ? 16 : 20,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            company,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontSize: isMobile ? 14 : 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            color: Colors.blue[200],
-                            size: isMobile ? 16 : 20,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            location,
-                            style: GoogleFonts.montserrat(
-                              color: Colors.white,
-                              fontSize: isMobile ? 14 : 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildHighlightItem(Icons.work, employmentType),
-                          _buildHighlightItem(
-                            Icons.trending_up,
-                            experienceLevel,
-                          ),
-                          _buildHighlightItem(Icons.attach_money, salary),
                         ],
                       ),
                     ],
                   ),
                 ),
-
-                // Job details
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Job Description',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: isMobile ? 16 : 18,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          description,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white.withOpacity(0.9),
-                            height: 1.5,
-                            fontSize: isMobile ? 14 : 16,
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        Text(
-                          'Required Skills',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: isMobile ? 16 : 18,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children:
-                              skills
-                                  .map(
-                                    (skill) => Chip(
-                                      label: Text(
-                                        skill.toString(),
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white,
-                                          fontSize: isMobile ? 12 : 14,
-                                        ),
-                                      ),
-                                      backgroundColor: Colors.blue.withOpacity(
-                                        0.3,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                        SizedBox(height: 24),
-                        _buildDetailRow('Employment Type', employmentType),
-                        _buildDetailRow('Experience', experienceLevel),
-                        _buildDetailRow('Salary', salary),
-                        _buildDetailRow('Location', location),
-                        SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => _pickFile(jobId),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Colors.blue,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Upload Resume',
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: isMobile ? 14 : 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed:
-                                    _resumeFiles[jobId] == null
-                                        ? null
-                                        : () => _submitResume(job),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Colors.green,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  disabledBackgroundColor: Colors.grey
-                                      .withOpacity(0.5),
-                                ),
-                                child: Text(
-                                  'Submit Application',
-                                  style: GoogleFonts.montserrat(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: isMobile ? 14 : 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 8),
-                        if (_resumeFiles[jobId] != null)
-                          Center(
-                            child: Text(
-                              'File: ${_resumeFiles[jobId]!.name}',
-                              style: GoogleFonts.poppins(
-                                color: Colors.green,
-                                fontSize: isMobile ? 12 : 14,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -1771,57 +2234,184 @@ class _JobOpeningsPageState extends State<JobOpeningsPage>
     );
   }
 
-  Widget _buildHighlightItem(IconData icon, String text) {
-    final isMobile = MediaQuery.of(context).size.width <= 600;
-
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.blue[200], size: isMobile ? 20 : 24),
-          SizedBox(height: 8),
-          Text(
-            text,
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontSize: isMobile ? 12 : 14,
+  Widget _buildInfoPill({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 16),
+            SizedBox(width: 4),
+            Text(
+              label,
+              style: GoogleFonts.montserrat(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 12,
+              ),
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          ],
+        ),
+        SizedBox(height: 5),
+        Text(
+          value,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader({required String title, required IconData icon}) {
+    return Row(
+      children: [
+        Icon(icon, color: Color(0xFFFFD700), size: 18),
+        SizedBox(width: 10),
+        Text(
+          title,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 17,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSkillChip(String skill) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.blue.withOpacity(0.3),
+            Colors.indigo.withOpacity(0.2),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1),
+      ),
+      child: Text(
+        skill,
+        style: GoogleFonts.montserrat(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildJobDetail({
+    required IconData iconData,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(iconData, color: Color(0xFFFFD700), size: 18),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    final isMobile = MediaQuery.of(context).size.width <= 600;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+  Widget _buildResumeStatusCard(PlatformFile file) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.indigo.withOpacity(0.2),
+            Colors.blue.withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: isMobile ? 100 : 150,
-            child: Text(
-              label + ':',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                color: Colors.white70,
-                fontSize: isMobile ? 14 : 16,
-              ),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.2),
+              shape: BoxShape.circle,
             ),
+            child: Icon(Icons.description, color: Colors.blue[300], size: 24),
           ),
+          SizedBox(width: 16),
           Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: isMobile ? 14 : 16,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Resume Ready",
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  file.name,
+                  style: GoogleFonts.poppins(
+                    color: Colors.blue[200],
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
+          Icon(Icons.check_circle, color: Colors.green[400], size: 24),
         ],
       ),
     );
