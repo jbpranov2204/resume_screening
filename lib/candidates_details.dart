@@ -1279,7 +1279,7 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                 widget.linkedin,
                 Icons.work,
                 Colors.blue,
-                () => launchUrl(Uri.parse(widget.linkedin)),
+                () => launchUrl(Uri.parse(_normalizeUrl(widget.linkedin))),
               ),
             if (widget.github.isNotEmpty)
               _buildContactItem(
@@ -1287,7 +1287,7 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
                 widget.github,
                 Icons.code,
                 Colors.purple,
-                () => launchUrl(Uri.parse(widget.github)),
+                () => launchUrl(Uri.parse(_normalizeUrl(widget.github))),
               ),
             if (widget.email.isEmpty &&
                 widget.phone.isEmpty &&
@@ -1328,6 +1328,14 @@ class _CandidateDetailsPageState extends State<CandidateDetailsPage>
         ],
       ),
     );
+  }
+
+  // Helper to ensure URLs are valid for LinkedIn and GitHub
+  String _normalizeUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return 'https://$url';
   }
 
   Widget _buildContactItem(
