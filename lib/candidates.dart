@@ -935,7 +935,7 @@ class CandidatesPage extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder:
-                      (context) => CandidateDetailsPage(
+                      (context) => CandidateDetailsTabBar(
                         name: name,
                         email: email,
                         phone: phone,
@@ -1478,7 +1478,7 @@ class CandidatesPage extends StatelessWidget {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder:
-                                        (context) => CandidateDetailsPage(
+                                        (context) => CandidateDetailsTabBar(
                                           name: name,
                                           email: email,
                                           phone: phone,
