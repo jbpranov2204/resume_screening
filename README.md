@@ -45,7 +45,7 @@ Explore the web app here: [https://resume-4e9cc.web.app/](https://resume-4e9cc.w
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/jbpranov2204/Code_Tool
+   git clone https://github.com/jbpranov2204/resume_screening
    ```
 
 2. **Navigate to the project directory**:
