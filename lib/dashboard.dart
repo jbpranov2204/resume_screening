@@ -505,25 +505,25 @@ class _DashboardPageState extends State<DashboardPage>
                       ],
                     ),
                   ),
+
+                  // Close button
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: IconButton(
+                      icon: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade800.withOpacity(0.7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.close, size: 20, color: Colors.white),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-
-          // Close button
-          Positioned(
-            top: 12,
-            right: 12,
-            child: IconButton(
-              icon: Container(
-                padding: EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade800.withOpacity(0.7),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.close, size: 20, color: Colors.white),
-              ),
-              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
@@ -1366,188 +1366,158 @@ class _DashboardPageState extends State<DashboardPage>
 
     return Container(
       margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey.shade900, Colors.grey.shade800.withOpacity(0.8)],
-        ),
+        color: Colors.grey.shade900.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade800),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            blurRadius: 5,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () {
-            // Navigate to job details
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.work_outline, color: Colors.blue, size: 18),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.blue.shade600, Colors.blue.shade900],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.work_outline,
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        size: 20,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            company,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      company,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey.shade400,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                SizedBox(height: 16),
-
-                // Information row
-                Row(
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color:
+                      isActive
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color:
+                        isActive
+                            ? Colors.green.shade400
+                            : Colors.orange.shade400,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isActive
-                                ? Colors.green.withOpacity(0.2)
-                                : Colors.orange.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color:
-                              isActive
-                                  ? Colors.green.shade400
-                                  : Colors.orange.shade400,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    Icon(
+                      Icons.people_outline,
+                      size: 12,
+                      color: Colors.blue.shade400,
                     ),
-                    SizedBox(width: 12),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 12,
-                            color: Colors.blue.shade400,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '$applicants',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.blue.shade400,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Spacer(),
+                    SizedBox(width: 4),
                     Text(
-                      date,
+                      '$applicants',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: Colors.blue.shade400,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-
-                SizedBox(height: 16),
-
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: Icon(Icons.person_search, size: 18),
-                        label: Text('Candidates'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.grey.shade700),
-                          minimumSize: Size(0, 36),
-                          padding: EdgeInsets.zero,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Icon(Icons.visibility_outlined, size: 18),
-                        label: Text('Details'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
-                          foregroundColor: Colors.white,
-                          minimumSize: Size(0, 36),
-                          padding: EdgeInsets.zero,
-                        ),
-                        onPressed: () => _fetchJobDetails(job['id']),
-                      ),
-                    ),
-                  ],
+              ),
+              Spacer(),
+              Text(
+                date,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
+
+          SizedBox(height: 16),
+
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: Icon(Icons.person_search, size: 18),
+                  label: Text('Candidates'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey.shade700),
+                    minimumSize: Size(0, 36),
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () {},
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.visibility_outlined, size: 18),
+                  label: Text('Details'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(0, 36),
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () => _fetchJobDetails(job['id']),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2266,58 +2236,53 @@ class _DashboardPageState extends State<DashboardPage>
     IconData icon,
     Color color,
   ) {
-    return HoverContainer(
-      hoverBorderColor: color,
-      defaultBorderColor: Colors.grey.shade800,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.2),
-          blurRadius: 10,
-          offset: Offset(0, 4),
-        ),
-      ],
-      hoverTransform: Matrix4.translationValues(0, -5, 0),
-      child: Container(
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade900.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade800),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-              child: Icon(icon, color: color),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
                 ),
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2360,7 +2325,8 @@ class _DashboardPageState extends State<DashboardPage>
           return GridView.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: _isLargeScreen ? 3 : 2,
-              childAspectRatio: 1.4,
+              childAspectRatio:
+                  2, // Reduced from 1.4 to 1.2 for smaller horizontal size
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
@@ -2464,184 +2430,160 @@ class _DashboardPageState extends State<DashboardPage>
             : 'No date available';
     final bool isActive = status == 'Active';
 
-    return HoverContainer(
-      hoverBorderColor: Colors.blue,
-      defaultBorderColor: Colors.grey.shade800,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.2),
-          blurRadius: 5,
-          offset: Offset(0, 2),
-        ),
-      ],
-      hoverTransform: Matrix4.translationValues(0, -3, 0),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Navigate to job details
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade900.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return Container(
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade900.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade800),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.work_outline, color: Colors.blue, size: 18),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      child: Icon(
-                        Icons.work_outline,
-                        color: Colors.blue,
-                        size: 18,
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            company,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey.shade400,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                    Text(
+                      company,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey.shade400,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
-                // Job status and date
-                Row(
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color:
+                      isActive
+                          ? Colors.green.withOpacity(0.2)
+                          : Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color:
+                        isActive
+                            ? Colors.green.shade400
+                            : Colors.orange.shade400,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              SizedBox(width: 12),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            isActive
-                                ? Colors.green.withOpacity(0.2)
-                                : Colors.orange.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        status,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color:
-                              isActive
-                                  ? Colors.green.shade400
-                                  : Colors.orange.shade400,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    Icon(
+                      Icons.people_outline,
+                      size: 12,
+                      color: Colors.blue.shade400,
                     ),
-                    SizedBox(width: 12),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.people_outline,
-                            size: 12,
-                            color: Colors.blue.shade400,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            '$applicants',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.blue.shade400,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Spacer(),
+                    SizedBox(width: 4),
                     Text(
-                      date,
+                      '$applicants',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.grey.shade500,
+                        color: Colors.blue.shade400,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-
-                SizedBox(height: 16),
-
-                // Action buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: Icon(Icons.person_search, size: 18),
-                        label: Text('Candidates'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: BorderSide(color: Colors.grey.shade700),
-                          minimumSize: Size(0, 36),
-                          padding: EdgeInsets.zero,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: Icon(Icons.visibility_outlined, size: 18),
-                        label: Text('Details'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade700,
-                          foregroundColor: Colors.white,
-                          minimumSize: Size(0, 36),
-                          padding: EdgeInsets.zero,
-                        ),
-                        onPressed: () => _fetchJobDetails(job['id']),
-                      ),
-                    ),
-                  ],
+              ),
+              Spacer(),
+              Text(
+                date,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade500,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
+
+          SizedBox(height: 16),
+
+          // Action buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: Icon(Icons.person_search, size: 18),
+                  label: Text('Candidates'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey.shade700),
+                    minimumSize: Size(0, 36),
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () {},
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.visibility_outlined, size: 18),
+                  label: Text('Details'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade700,
+                    foregroundColor: Colors.white,
+                    minimumSize: Size(0, 36),
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () => _fetchJobDetails(job['id']),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
