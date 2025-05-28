@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:marquee/marquee.dart';
-import 'package:resume_screening/1_page.dart';
+import 'package:resume_screening/dashboard.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:resume_screening/Signup_page.dart';
 import 'package:resume_screening/user_page.dart';
